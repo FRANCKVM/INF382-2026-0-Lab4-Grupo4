@@ -1,0 +1,8 @@
+{
+  "name": "Copy of BancoPerú Premium",
+  "description": "A comprehensive banking application featuring transfers, service payments, currency exchange, savings goals, and loan management.",
+  "requestFramePermissions": [
+    "camera",
+    "geolocation"
+  ]
+}
