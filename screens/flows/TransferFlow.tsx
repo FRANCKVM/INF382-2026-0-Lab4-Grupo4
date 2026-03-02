@@ -16,6 +16,8 @@ interface FlowProps {
 }
 
 export const TransferSelect: React.FC<FlowProps> = ({ navigate, setRecipient, setAmount }) => {
+  const [step, setStep] = React.useState(1);
+  const [transferType, setTransferType] = React.useState<'MISMO' | 'INTER' | 'INT' | null>('INTER');
   const [searchValue, setSearchValue] = React.useState('');
   const [error, setError] = React.useState('');
   const [contacts, setContacts] = React.useState([
@@ -37,21 +39,21 @@ export const TransferSelect: React.FC<FlowProps> = ({ navigate, setRecipient, se
     setError('');
     
     if (!searchValue) {
-      setError('Por favor, ingresa un número de cuenta o CCI');
+      setError('Por favor, ingresa los datos requeridos');
       return;
     }
 
-    if (!/^\d+$/.test(searchValue)) {
+    if (transferType !== 'INT' && !/^\d+$/.test(searchValue)) {
       setError('Solo se permiten números');
       return;
     }
 
-    if (searchValue.length !== 20) {
+    if (transferType === 'INTER' && searchValue.length !== 20) {
       setError('El CCI debe tener exactamente 20 cifras');
       return;
     }
 
-    if (searchValue !== '24242525109075644521') {
+    if (transferType === 'INTER' && searchValue !== '24242525109075644521') {
       setError('CCI no válido');
       return;
     }
@@ -60,7 +62,7 @@ export const TransferSelect: React.FC<FlowProps> = ({ navigate, setRecipient, se
       setRecipient({
         name: 'Juan Perez',
         initials: 'JP',
-        bank: 'BCP Soles • *4521',
+        bank: transferType === 'MISMO' ? 'BCP Soles • *4521' : (transferType === 'INTER' ? 'Interbank Soles • *8823' : 'Chase Bank • *9901'),
         color: 'bg-green-100 text-green-700',
         isSearch: true
       });
@@ -85,63 +87,126 @@ export const TransferSelect: React.FC<FlowProps> = ({ navigate, setRecipient, se
     return a.isFavorite ? -1 : 1;
   });
 
-  return (
-    <div className="bg-white h-screen flex flex-col overflow-hidden">
-      <Header title="Selección de Destinatario" onBack={() => navigate(Screen.HOME)} />
-      
-      <div className="flex-1 overflow-y-auto px-6 py-4 no-scrollbar">
-          <h2 className="text-2xl font-bold mb-6">¿A quién deseas transferir?</h2>
+  const isValid = React.useMemo(() => {
+    if (!searchValue) return false;
+    if (transferType === 'INTER') return /^\d{20}$/.test(searchValue);
+    if (transferType === 'MISMO') return /^\d{10,20}$/.test(searchValue);
+    if (transferType === 'INT') return searchValue.length >= 8;
+    return false;
+  }, [searchValue, transferType]);
+
+  if (step === 1) {
+    return (
+      <div className="bg-white h-screen flex flex-col overflow-hidden">
+        <Header title="Selección de Destinatario" onBack={() => navigate(Screen.HOME)} />
+        
+        <div className="flex-1 overflow-y-auto px-6 py-4 no-scrollbar">
+            <h2 className="text-2xl font-bold mb-6">¿A quién deseas transferir?</h2>
+            
+            <div className="mb-8">
+                <div 
+                  onClick={() => setStep(2)}
+                  className="p-5 rounded-2xl border-2 border-blue-600 bg-white cursor-pointer active:scale-[0.98] transition-all flex justify-between items-center"
+                >
+                    <div>
+                        <h3 className="font-bold text-lg text-slate-900">Nuevo Destinatario</h3>
+                        <p className="text-sm text-gray-500">Transfiere a una nueva cuenta</p>
+                    </div>
+                    <ChevronDown className="-rotate-90 text-blue-600" size={20} />
+                </div>
+            </div>
+
+            <div className="mt-4 mb-4">
+              <h3 className="font-bold text-lg">Destinatarios Frecuentes</h3>
+              <p className="text-sm text-gray-500">Seleccione un destinatario para transferir nuevamente</p>
+            </div>
+            <div className="space-y-4 pb-20">
+                {sortedContacts.map((contact) => (
+                    <div key={contact.id} onClick={() => handleSelectContact(contact)} className="flex items-center justify-between p-2 cursor-pointer hover:bg-gray-50 rounded-lg group">
+                        <div className="flex items-center gap-4">
+                            <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${contact.color}`}>
+                                {contact.initials}
+                            </div>
+                            <div>
+                                <h4 className="font-bold text-slate-900">{contact.name}</h4>
+                                <p className="text-xs text-gray-500">{contact.bank}</p>
+                            </div>
+                        </div>
+                        <button 
+                          onClick={(e) => toggleFavorite(e, contact.id)}
+                          className={`p-2 rounded-full transition-colors ${contact.isFavorite ? 'text-yellow-500' : 'text-gray-300 hover:text-yellow-400'}`}
+                        >
+                          <Star size={20} fill={contact.isFavorite ? "currentColor" : "none"} />
+                        </button>
+                    </div>
+                ))}
+            </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (step === 2) {
+    return (
+      <div className="bg-white h-screen flex flex-col overflow-hidden">
+        <Header title="Nuevo Destinatario" onBack={() => setStep(1)} />
+        <div className="flex-1 px-6 py-4 flex flex-col">
+          <h2 className="text-2xl font-bold mb-6">Completa los datos</h2>
           
-          <div className="relative mb-8">
-              <button 
-                onClick={handleSearch}
-                className="absolute left-4 top-3.5 text-gray-400 hover:text-blue-600 transition-colors z-10"
-                aria-label="Buscar"
+          <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Tipo de transferencia</p>
+          <div className="flex gap-2 mb-8">
+            {[
+              { id: 'MISMO', label: 'Mismo Banco' },
+              { id: 'INTER', label: 'Interbancaria' },
+              { id: 'INT', label: 'Internacional' }
+            ].map((type) => (
+              <button
+                key={type.id}
+                onClick={() => {
+                  setTransferType(type.id as any);
+                  setError('');
+                }}
+                className={`flex-1 py-3 px-1 rounded-xl text-xs font-bold transition-all border-2 ${
+                  transferType === type.id 
+                    ? 'border-blue-600 bg-blue-50 text-blue-600' 
+                    : 'border-gray-100 bg-gray-50 text-gray-500 hover:border-gray-200'
+                }`}
               >
-                <Search size={20} />
+                {type.label}
               </button>
+            ))}
+          </div>
+
+          <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">
+            {transferType === 'MISMO' ? 'Número de cuenta' : (transferType === 'INTER' ? 'CCI' : 'SWIFT / IBAN')}
+          </p>
+          <div className="relative mb-4">
               <input 
                 type="text" 
-                placeholder="Ingresa número de cuenta o CCI" 
-                className={`w-full bg-gray-50 pl-12 pr-4 py-3 rounded-xl outline-none focus:ring-2 ${error ? 'focus:ring-red-100 border border-red-300' : 'focus:ring-blue-100'}`} 
+                placeholder={transferType === 'INTER' ? "20 dígitos" : (transferType === 'INT' ? "Código SWIFT o IBAN" : "Número de cuenta")} 
+                className={`w-full bg-gray-50 px-4 py-3 rounded-xl outline-none focus:ring-2 ${error ? 'focus:ring-red-100 border border-red-300' : 'focus:ring-blue-100'}`} 
                 value={searchValue}
                 onChange={(e) => {
                   setSearchValue(e.target.value);
                   if (error) setError('');
                 }}
                 onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                autoFocus
               />
               {error && <p className="text-red-500 text-xs mt-2 ml-2 font-medium">{error}</p>}
           </div>
 
-          <div className="mt-4 mb-4">
-            <h3 className="font-bold text-lg">Destinatarios Frecuentes</h3>
-            <p className="text-sm text-gray-500">Seleccione un destinatario para transferir nuevamente</p>
+          <div className="flex-1"></div>
+          
+          <div className="mb-8">
+            <Button onClick={handleSearch} disabled={!isValid}>Continuar</Button>
           </div>
-          <div className="space-y-4 pb-20">
-              {sortedContacts.map((contact) => (
-                  <div key={contact.id} onClick={() => handleSelectContact(contact)} className="flex items-center justify-between p-2 cursor-pointer hover:bg-gray-50 rounded-lg group">
-                      <div className="flex items-center gap-4">
-                          <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${contact.color}`}>
-                              {contact.initials}
-                          </div>
-                          <div>
-                              <h4 className="font-bold text-slate-900">{contact.name}</h4>
-                              <p className="text-xs text-gray-500">{contact.bank}</p>
-                          </div>
-                      </div>
-                      <button 
-                        onClick={(e) => toggleFavorite(e, contact.id)}
-                        className={`p-2 rounded-full transition-colors ${contact.isFavorite ? 'text-yellow-500' : 'text-gray-300 hover:text-yellow-400'}`}
-                      >
-                        <Star size={20} fill={contact.isFavorite ? "currentColor" : "none"} />
-                      </button>
-                  </div>
-              ))}
-          </div>
+        </div>
       </div>
-    </div>
-  );
+    );
+  }
+
+  return null; // Should not reach here
 };
 
 export const TransferAmount: React.FC<FlowProps> = ({ navigate, amount = '0', setAmount, sourceAccount, setSourceAccount }) => {
@@ -177,6 +242,8 @@ export const TransferAmount: React.FC<FlowProps> = ({ navigate, amount = '0', se
     };
 
     const formattedDisplayAmount = amount === '0' ? '0.00' : Number(amount).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+    const isAmountValid = Number(amount) > 0;
 
     return (
         <div className="bg-white min-h-screen flex flex-col relative">
@@ -214,7 +281,7 @@ export const TransferAmount: React.FC<FlowProps> = ({ navigate, amount = '0', se
                 <div className="flex-1"></div>
                 <NumberPad onPress={handlePress} onDelete={handleDelete} />
                 <div className="mt-8 mb-6">
-                     <Button onClick={handleContinue}>Continuar</Button>
+                     <Button onClick={handleContinue} disabled={!isAmountValid}>Continuar</Button>
                 </div>
             </div>
 
@@ -261,6 +328,7 @@ export const TransferAmount: React.FC<FlowProps> = ({ navigate, amount = '0', se
 export const TransferConfirm: React.FC<FlowProps> = ({ navigate, amount = '0', recipient, sourceAccount, addTransaction }) => {
     const formattedAmount = Number(amount).toFixed(2);
     const commission = (Number(amount) * 0.005).toFixed(2); // 0.5% commission
+    const totalDeduction = (Number(amount) * 1.005).toFixed(2);
 
     const handleConfirm = () => {
         if (addTransaction) {
@@ -268,11 +336,12 @@ export const TransferConfirm: React.FC<FlowProps> = ({ navigate, amount = '0', r
                 id: `t-${Date.now()}`,
                 title: recipient?.name || 'Transferencia',
                 subtitle: 'Transferencia enviada',
-                amount: -Number(amount),
+                amount: -Number(totalDeduction),
                 currency: 'PEN',
                 date: 'Hoy',
                 type: 'expense',
-                icon: 'user'
+                icon: 'user',
+                commission: Number(commission)
             });
         }
         navigate(Screen.TRANSFER_SUCCESS);
@@ -286,9 +355,16 @@ export const TransferConfirm: React.FC<FlowProps> = ({ navigate, amount = '0', r
                 <h2 className="text-2xl font-bold mb-2">Confirma tu transferencia</h2>
                 <p className="text-gray-500 mb-8">Revisa los detalles antes de confirmar.</p>
 
-                <div className="bg-white rounded-3xl p-6 shadow-sm mb-6 text-center">
-                    <p className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-2">Monto a enviar</p>
-                    <h3 className="text-4xl font-bold text-blue-600">S/ {formattedAmount}</h3>
+                <div className="bg-white rounded-3xl p-6 shadow-sm mb-6 flex flex-col gap-4">
+                    <div className="text-center border-b border-gray-50 pb-4">
+                        <p className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-1">Monto a enviar</p>
+                        <h3 className="text-2xl font-bold text-slate-900">S/ {formattedAmount}</h3>
+                    </div>
+                    <div className="text-center">
+                        <p className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-1">Monto total a descontar</p>
+                        <h3 className="text-3xl font-bold text-blue-600">S/ {totalDeduction}</h3>
+                        <p className="text-[10px] text-gray-400 mt-1">(Incluye comisión del 0.5%)</p>
+                    </div>
                 </div>
 
                 <div className="space-y-6">
@@ -319,10 +395,6 @@ export const TransferConfirm: React.FC<FlowProps> = ({ navigate, amount = '0', r
             </div>
             
             <div className="p-6 bg-white border-t border-gray-100">
-                <div className="flex justify-between text-xs text-gray-500 mb-4 px-2">
-                    <span>Comisión de transferencia (0.5%)</span>
-                    <span className="text-green-600 font-bold">S/ {commission}</span>
-                </div>
                 <Button onClick={handleConfirm}>Confirmar transferencia</Button>
             </div>
         </div>
@@ -331,7 +403,13 @@ export const TransferConfirm: React.FC<FlowProps> = ({ navigate, amount = '0', r
 
 export const TransferSuccess: React.FC<FlowProps> = ({ navigate, amount = '0', recipient, sourceAccount }) => {
     const formattedAmount = Number(amount).toFixed(2);
+    const commission = (Number(amount) * 0.005).toFixed(2);
+    const totalWithCommission = (Number(amount) * 1.005).toFixed(2);
     const [showShareSheet, setShowShareSheet] = React.useState(false);
+
+    const now = new Date();
+    const formattedDate = now.toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' });
+    const formattedTime = now.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase();
 
     const apps = [
         { name: 'WhatsApp', icon: <MessageCircle size={24} className="text-green-500" /> },
@@ -367,15 +445,26 @@ export const TransferSuccess: React.FC<FlowProps> = ({ navigate, amount = '0', r
                     )}
                 </div>
 
-                <div className="flex justify-between mb-4">
+                <div className="flex justify-between mb-6">
                     <div>
                         <p className="text-xs text-gray-500 mb-1">FECHA</p>
-                        <p className="font-bold text-sm">20 Feb, 2026</p>
-                        <p className="text-xs text-gray-400">21:21 PM</p>
+                        <p className="font-bold text-sm">{formattedDate}</p>
+                        <p className="text-xs text-gray-400">{formattedTime}</p>
                     </div>
                     <div className="text-right">
                          <p className="text-xs text-gray-500 mb-1">OPERACIÓN</p>
                          <p className="font-bold text-sm">#98234105</p>
+                    </div>
+                </div>
+
+                <div className="flex justify-between pt-4 border-t border-gray-100 items-end">
+                    <div>
+                        <p className="text-xs text-gray-500 mb-1">COMISIÓN (0.5%)</p>
+                        <p className="font-bold text-sm text-slate-900">S/ {commission}</p>
+                    </div>
+                    <div className="text-right">
+                        <p className="text-xs text-gray-500 mb-1 uppercase tracking-wider">TOTAL DESCONTADO</p>
+                        <p className="font-bold text-sm text-slate-900">S/ {totalWithCommission}</p>
                     </div>
                 </div>
             </div>
@@ -393,7 +482,7 @@ export const TransferSuccess: React.FC<FlowProps> = ({ navigate, amount = '0', r
                 >
                     Compartir constancia
                 </Button>
-                <Button variant="ghost" onClick={() => navigate(Screen.HOME)}>Volver al inicio</Button>
+                <Button variant="outline" onClick={() => navigate(Screen.HOME)}>Volver al inicio</Button>
             </div>
 
             {/* Share Sheet */}

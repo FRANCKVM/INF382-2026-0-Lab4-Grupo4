@@ -48,6 +48,7 @@ export enum Screen {
   PROFILE_EDIT = 'PROFILE_EDIT',
   PROFILE_SECURITY = 'PROFILE_SECURITY',
   PROFILE_HELP = 'PROFILE_HELP',
+  PROFILE_CARD_SELECT = 'PROFILE_CARD_SELECT',
   PROFILE_CARD_SETTINGS = 'PROFILE_CARD_SETTINGS',
   PROFILE_LOCATIONS = 'PROFILE_LOCATIONS',
   NOTIFICATIONS = 'NOTIFICATIONS',
@@ -65,6 +66,8 @@ export interface Account {
   id: string;
   name: string;
   number: string;
+  cci?: string;
+  cardNumber?: string;
   balance: number;
   currency: 'PEN' | 'USD';
   type?: 'DEBIT' | 'CREDIT';
@@ -73,6 +76,7 @@ export interface Account {
 
 export interface Transaction {
   id: string;
+  accountId?: string;
   title: string;
   subtitle: string;
   amount: number;
@@ -80,4 +84,5 @@ export interface Transaction {
   date: string;
   type: 'income' | 'expense';
   icon?: string;
+  commission?: number;
 }

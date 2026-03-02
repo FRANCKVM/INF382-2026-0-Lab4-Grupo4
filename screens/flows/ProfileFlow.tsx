@@ -1,14 +1,17 @@
 import React, { useState } from 'react';
-import { Screen } from '../../types';
+import { Screen, Account } from '../../types';
 import { Header, Button } from '../../components/UI';
 import { CURRENT_USER } from '../../constants';
 import { 
     Search, CreditCard, Lock, Wallet, ChevronRight, MessageCircle, Phone, 
-    Camera, Bell, Plane, ShieldAlert, Wifi, MapPin, Sliders
+    Camera, Bell, Plane, ShieldAlert, Wifi, MapPin, Sliders, CreditCard as CardIcon
 } from 'lucide-react';
 
 interface FlowProps {
   navigate: (screen: Screen) => void;
+  accounts?: Account[];
+  account?: Account;
+  onSelectAccount?: (account: Account) => void;
 }
 
 // 1. Help Center (Centro de Ayuda)
@@ -240,29 +243,79 @@ export const ProfileSecurity: React.FC<FlowProps> = ({ navigate }) => {
     );
 };
 
-// 4. Card Settings (Configuración de Tarjetas)
-export const ProfileCardSettings: React.FC<FlowProps> = ({ navigate }) => {
+// 4. Card Selection (Selección de Tarjetas)
+export const ProfileCardSelect: React.FC<FlowProps> = ({ navigate, accounts = [], onSelectAccount }) => {
+    return (
+        <div className="bg-gray-50 min-h-screen flex flex-col">
+            <Header title="Configuración de Tarjetas" onBack={() => navigate(Screen.PROFILE)} />
+            
+            <div className="px-6 py-6 flex-1">
+                <h3 className="font-bold text-lg text-slate-900 mb-2">Selecciona una tarjeta</h3>
+                <p className="text-sm text-gray-500 mb-8">Elige la tarjeta que deseas configurar</p>
+
+                <div className="space-y-4">
+                    {accounts.map((acc) => (
+                        <button 
+                            key={acc.id}
+                            onClick={() => {
+                                if (onSelectAccount) onSelectAccount(acc);
+                                navigate(Screen.PROFILE_CARD_SETTINGS);
+                            }}
+                            className="w-full bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between active:scale-[0.98] transition-transform text-left"
+                        >
+                            <div className="flex items-center gap-4">
+                                <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${acc.type === 'CREDIT' ? 'bg-slate-900 text-white' : 'bg-blue-600 text-white'}`}>
+                                    <CardIcon size={24} />
+                                </div>
+                                <div>
+                                    <h4 className="font-bold text-slate-900">{acc.type === 'DEBIT' ? 'Visa Débito' : acc.name}</h4>
+                                    <p className="text-xs text-gray-400">{acc.cardNumber || acc.number}</p>
+                                </div>
+                            </div>
+                            <ChevronRight className="text-gray-300" size={20} />
+                        </button>
+                    ))}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// 5. Card Settings (Configuración de Tarjetas)
+export const ProfileCardSettings: React.FC<FlowProps> = ({ navigate, account }) => {
     const [limit, setLimit] = useState(2500);
+    const [showBlockConfirm, setShowBlockConfirm] = useState(false);
     const [toggles, setToggles] = useState({
+        presential: true,
         internet: true,
         abroad: false,
         atm: true
     });
+    const [isBlocked, setIsBlocked] = useState(false);
+
+    if (!account) return null;
 
     const toggle = (key: keyof typeof toggles) => {
         setToggles(prev => ({ ...prev, [key]: !prev[key] }));
     };
 
+    const confirmBlock = () => {
+        setIsBlocked(true);
+        setShowBlockConfirm(false);
+    };
+
+    const isCredit = account.type === 'CREDIT';
+
     return (
         <div className="bg-white min-h-screen flex flex-col">
-            <Header title="Configuración de Tarjeta" onBack={() => navigate(Screen.PROFILE)} />
+            <Header title="Configuración de Tarjeta" onBack={() => navigate(Screen.PROFILE_CARD_SELECT)} />
             
             <div className="px-6 pb-6 flex-1 overflow-y-auto">
                 {/* Card Visual */}
-                <div className="mt-4 mb-10 mx-auto w-full max-w-[320px] aspect-[1.58] bg-blue-700 rounded-2xl shadow-xl shadow-blue-700/30 p-6 text-white relative overflow-hidden flex flex-col justify-between">
+                <div className={`mt-4 mb-10 mx-auto w-full max-w-[320px] aspect-[1.58] rounded-2xl shadow-xl p-6 text-white relative overflow-hidden flex flex-col justify-between ${isCredit ? 'bg-slate-900 shadow-slate-900/30' : 'bg-blue-700 shadow-blue-700/30'}`}>
                     <div className="absolute top-0 right-0 p-8 bg-white/5 rounded-full blur-2xl"></div>
                     <div className="flex justify-between items-start z-10">
-                        <span className="font-bold tracking-widest text-lg">PREMIUM</span>
+                        <span className="font-bold tracking-widest text-lg">{isCredit ? 'SIGNATURE' : 'PREMIUM'}</span>
                         <Wifi className="rotate-90 opacity-80" />
                     </div>
                     <div className="z-10">
@@ -273,10 +326,10 @@ export const ProfileCardSettings: React.FC<FlowProps> = ({ navigate }) => {
                              <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
                              <span className="ml-1">••••</span>
                              <span className="ml-1">••••</span>
-                             <span className="ml-2 text-base font-mono">4829</span>
+                             <span className="ml-2 text-base font-mono">{(account.cardNumber || account.number).slice(-4)}</span>
                         </div>
                         <div className="flex justify-between items-end">
-                            <span className="text-sm font-medium tracking-wide">Alejandro G.</span>
+                            <span className="text-sm font-medium tracking-wide">{CURRENT_USER.name}</span>
                             <span className="text-[10px] opacity-70">VENCE 09/28</span>
                         </div>
                     </div>
@@ -284,6 +337,24 @@ export const ProfileCardSettings: React.FC<FlowProps> = ({ navigate }) => {
 
                 {/* Settings Toggles */}
                 <div className="space-y-6 mb-10">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600">
+                                <CardIcon size={20} />
+                            </div>
+                            <div>
+                                <h4 className="font-bold text-slate-900">Compras presenciales</h4>
+                                <p className="text-xs text-gray-500">Uso en establecimientos físicos</p>
+                            </div>
+                        </div>
+                         <div 
+                            onClick={() => toggle('presential')}
+                            className={`w-12 h-7 rounded-full p-1 cursor-pointer transition-colors ${toggles.presential ? 'bg-blue-600' : 'bg-gray-200'}`}
+                        >
+                            <div className={`w-5 h-5 bg-white rounded-full shadow-sm transition-transform ${toggles.presential ? 'translate-x-5' : ''}`}></div>
+                        </div>
+                    </div>
+
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
                             <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600">
@@ -364,15 +435,54 @@ export const ProfileCardSettings: React.FC<FlowProps> = ({ navigate }) => {
                     </div>
                 </div>
                 
-                <p className="text-center text-[10px] text-blue-400 mt-6 px-8 leading-relaxed">
+                <p className="text-center text-[10px] text-blue-400 mt-6 px-8 leading-relaxed mb-8">
                     Puedes modificar estos límites en cualquier momento para mayor seguridad de tus operaciones.
                 </p>
+
+                {/* Block Card Button */}
+                <button 
+                    onClick={() => !isBlocked && setShowBlockConfirm(true)}
+                    disabled={isBlocked}
+                    className={`w-full flex items-center justify-center gap-2 font-bold py-4 rounded-2xl transition-all ${isBlocked ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-red-50 text-red-600 hover:bg-red-100 active:scale-[0.98]'}`}
+                >
+                    <ShieldAlert size={20} />
+                    {isBlocked ? 'Tarjeta bloqueada' : 'Bloquear tarjeta'}
+                </button>
             </div>
+
+            {/* Block Confirmation Modal */}
+            {showBlockConfirm && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-slate-900/50 backdrop-blur-sm">
+                    <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl">
+                        <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center text-red-500 mx-auto mb-4">
+                            <ShieldAlert size={32} />
+                        </div>
+                        <h3 className="text-xl font-bold text-center text-slate-900 mb-2">¿Bloquear tarjeta?</h3>
+                        <p className="text-center text-gray-500 text-sm mb-6">
+                            Tu tarjeta será congelada temporalmente. No podrás realizar compras ni retiros hasta que la desbloquees.
+                        </p>
+                        <div className="space-y-3">
+                            <button 
+                                onClick={confirmBlock}
+                                className="w-full bg-red-500 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-red-500/30 active:scale-[0.98] transition-transform"
+                            >
+                                Sí, bloquear tarjeta
+                            </button>
+                            <button 
+                                onClick={() => setShowBlockConfirm(false)}
+                                className="w-full bg-gray-50 text-slate-700 font-bold py-3.5 rounded-xl active:scale-[0.98] transition-transform"
+                            >
+                                Cancelar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
 
-// 5. Locations (Ubícanos)
+// 6. Locations (Ubícanos)
 export const ProfileLocations: React.FC<FlowProps> = ({ navigate }) => {
     return (
         <div className="bg-gray-50 min-h-screen flex flex-col relative">

@@ -67,22 +67,32 @@ export const StatementSelectProduct: React.FC<FlowProps> = ({ navigate }) => {
 // 2. Period Selection
 export const StatementSelectPeriod: React.FC<FlowProps> = ({ navigate }) => {
     const [selectedPeriod, setSelectedPeriod] = useState<string>('current');
+    const [showOthers, setShowOthers] = useState(false);
 
     const periods = [
-        { id: 'current', label: 'Mes actual', sub: 'Octubre' },
-        { id: 'prev1', label: 'Septiembre 2023' },
-        { id: 'prev2', label: 'Agosto 2023' },
+        { id: 'current', label: 'Mes actual', sub: 'Marzo 2026' },
+        { id: 'prev1', label: 'Febrero 2026' },
+        { id: 'prev2', label: 'Enero 2026' },
     ];
+
+    const otherPeriods = [
+        { id: 'dec25', label: 'Diciembre 2025', sub: '' },
+        { id: 'nov25', label: 'Noviembre 2025', sub: '' },
+        { id: 'oct25', label: 'Octubre 2025', sub: '' },
+        { id: 'sep25', label: 'Septiembre 2025', sub: '' },
+    ];
+
+    const allPeriods = showOthers ? [...periods, ...otherPeriods] : periods;
 
     return (
         <div className="bg-gray-50 min-h-screen flex flex-col">
-            <Header title="Solicitar estado de cuenta" onBack={() => navigate(Screen.STATEMENT_SELECT_PRODUCT)} />
+            <Header title="Solicitar estado de cuenta" onBack={() => navigate(Screen.HOME)} />
             
             <div className="px-6 pt-2 pb-6 flex-1 flex flex-col">
                 <p className="text-gray-500 mb-6">Selecciona el periodo que deseas consultar</p>
 
                 <div className="space-y-4 mb-4">
-                    {periods.map((p) => {
+                    {allPeriods.map((p) => {
                          const isSelected = selectedPeriod === p.id;
                          return (
                             <div 
@@ -106,19 +116,24 @@ export const StatementSelectPeriod: React.FC<FlowProps> = ({ navigate }) => {
                          );
                     })}
 
-                    {/* Date Range Option */}
-                    <div className="bg-white p-4 rounded-2xl border border-transparent shadow-sm flex items-center justify-between cursor-pointer hover:bg-gray-50">
-                        <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center text-gray-500">
-                                <Calendar size={24} />
+                    {/* Other Periods Option */}
+                    {!showOthers && (
+                        <div 
+                            onClick={() => setShowOthers(true)}
+                            className="bg-white p-4 rounded-2xl border border-transparent shadow-sm flex items-center justify-between cursor-pointer hover:bg-gray-50"
+                        >
+                            <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center text-gray-500">
+                                    <Calendar size={24} />
+                                </div>
+                                <div>
+                                    <h4 className="font-bold text-slate-900">Otros periodos</h4>
+                                    <p className="text-sm text-gray-400">Ver meses anteriores</p>
+                                </div>
                             </div>
-                            <div>
-                                <h4 className="font-bold text-slate-900">Rango de fechas</h4>
-                                <p className="text-sm text-gray-400">Personalizado</p>
-                            </div>
+                            <ChevronRight className="text-gray-300" />
                         </div>
-                        <ChevronRight className="text-gray-300" />
-                    </div>
+                    )}
                 </div>
 
                 <div className="mt-auto">
@@ -216,18 +231,18 @@ export const StatementSuccess: React.FC<FlowProps> = ({ navigate }) => {
 
             <h2 className="text-2xl font-bold text-slate-900 mb-3 text-center">¡Solicitud enviada!</h2>
             <p className="text-gray-500 text-center max-w-xs mb-10 leading-relaxed">
-                Tu estado de cuenta de Octubre ha sido enviado a tu correo.
+                Tu estado de cuenta de Marzo ha sido enviado a tu correo.
             </p>
 
             <div className="w-full bg-white rounded-3xl p-6 shadow-sm mb-6">
                 <div className="space-y-4">
                     <div className="flex justify-between text-sm items-center border-b border-gray-50 pb-4">
                         <span className="text-gray-500">Fecha de solicitud</span>
-                        <span className="font-bold text-slate-900">24 Oct, 2023</span>
+                        <span className="font-bold text-slate-900">01 Mar, 2026</span>
                     </div>
                     <div className="flex justify-between text-sm items-center border-b border-gray-50 pb-4">
                         <span className="text-gray-500">Hora</span>
-                        <span className="font-bold text-slate-900">14:30 PM</span>
+                        <span className="font-bold text-slate-900">13:55 PM</span>
                     </div>
                     <div className="flex justify-between text-sm items-center">
                         <span className="text-gray-500">Nro. de operación</span>

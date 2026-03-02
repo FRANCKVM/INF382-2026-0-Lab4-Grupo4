@@ -14,8 +14,8 @@ export const Header: React.FC<HeaderProps> = ({ title, onBack, onClose, rightEle
   <div className={`flex items-center justify-between px-6 py-4 bg-white/0 ${className}`}>
     <div className="flex items-center gap-4">
       {onBack && (
-        <button onClick={onBack} className="p-2 -ml-2 hover:bg-black/5 rounded-full transition-colors">
-          <ArrowLeft size={24} className="text-slate-900" />
+        <button onClick={onBack} className="w-10 h-10 flex items-center justify-center border border-blue-600 rounded-full hover:bg-blue-50 transition-colors">
+          <ArrowLeft size={20} className="text-blue-600" />
         </button>
       )}
       <h1 className="text-lg font-semibold text-slate-900">{title}</h1>
@@ -50,7 +50,7 @@ export const Button: React.FC<ButtonProps> = ({
   const variants = {
     primary: "bg-blue-600 text-white shadow-lg shadow-blue-600/30 hover:bg-blue-700",
     secondary: "bg-blue-50 text-blue-600 hover:bg-blue-100",
-    outline: "border-2 border-blue-600 text-blue-600 hover:bg-blue-50",
+    outline: "border border-blue-600 text-blue-600 hover:bg-blue-50",
     ghost: "text-blue-600 hover:bg-gray-100"
   };
 

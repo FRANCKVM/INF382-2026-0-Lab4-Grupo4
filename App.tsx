@@ -16,7 +16,7 @@ import { GoalsList, GoalsCreateCategory, GoalsCreateDetails, GoalsSuccess, GoalD
 import { ServicesSelect, ServicesDetails, ServicesDebt, ServicesConfirm, ServicesSuccess } from './screens/flows/ServicesFlow';
 import { QRScan, QRAmount, QRConfirm, QRSuccess } from './screens/flows/QRFlow';
 import { StatementSelectProduct, StatementSelectPeriod, StatementDeliveryMethod, StatementSuccess } from './screens/flows/StatementFlow';
-import { ProfileEdit, ProfileSecurity, ProfileHelp, ProfileCardSettings, ProfileLocations } from './screens/flows/ProfileFlow';
+import { ProfileEdit, ProfileSecurity, ProfileHelp, ProfileCardSelect, ProfileCardSettings, ProfileLocations } from './screens/flows/ProfileFlow';
 import { NotificationsScreen } from './screens/Notifications';
 import { AllTransactionsScreen } from './screens/AllTransactions';
 import { TransactionDetailScreen } from './screens/TransactionDetail';
@@ -50,20 +50,50 @@ const App: React.FC = () => {
   const [exchangeAmount, setExchangeAmount] = useState('0');
   const [exchangeCurrency, setExchangeCurrency] = useState<'PEN' | 'USD'>('PEN');
 
+  // Services Flow State
+  const [selectedService, setSelectedService] = useState<any>(null);
+  const [serviceSupply, setServiceSupply] = useState('');
+  const [serviceAmount, setServiceAmount] = useState(0);
+  const [favoriteServices, setFavoriteServices] = useState<any[]>([
+      { id: 1, name: 'Sedapal', detail: 'Departamento Lima', icon: 'S', color: 'bg-blue-500', type: 'Agua', inputLabel: 'Número de suministro', inputType: 'number', inputPlaceholder: 'Ej. 1234567', savedSupply: '1234567' },
+      { id: 2, name: 'Luz del Sur', detail: 'Casa Playa', icon: 'L', color: 'bg-amber-400', type: 'Luz', inputLabel: 'Número de suministro', inputType: 'number', inputPlaceholder: 'Ej. 1234567', savedSupply: '9876543' },
+      { id: 3, name: 'Claro', detail: 'Internet Hogar', icon: 'C', color: 'bg-red-500', type: 'Internet', inputLabel: 'Número de teléfono o DNI', inputType: 'text', inputPlaceholder: 'Ej. 999888777', savedSupply: '999888777' },
+  ]);
+
+  const addFavoriteService = (service: any, supply: string) => {
+      setFavoriteServices(prev => {
+          // Check if already exists
+          if (prev.some(fav => fav.name === service.name && fav.savedSupply === supply)) {
+              return prev;
+          }
+          return [...prev, { ...service, id: Date.now(), savedSupply: supply, detail: `Suministro: ${supply}` }];
+      });
+  };
+
   const addTransaction = (tx: Transaction) => {
-    setTransactions(prev => [tx, ...prev]);
+    const targetAccountId = tx.accountId || sourceAccount.id;
+    const txWithAccount = { ...tx, accountId: targetAccountId };
+    setTransactions(prev => [txWithAccount, ...prev]);
+    
     // Update account balance
     setAccounts(prev => {
-      const newAccounts = prev.map(acc => {
-        if (acc.id === sourceAccount.id) {
+      return prev.map(acc => {
+        // Update the account where the transaction is recorded
+        if (acc.id === targetAccountId) {
           const updatedAcc = { ...acc, balance: acc.balance + tx.amount };
-          // Also update the sourceAccount state to keep it in sync for the next operation
+          if (acc.id === sourceAccount.id) setSourceAccount(updatedAcc);
+          return updatedAcc;
+        }
+        
+        // If we are paying a card from another account, we also need to deduct from source
+        if (targetAccountId !== sourceAccount.id && acc.id === sourceAccount.id) {
+          const updatedAcc = { ...acc, balance: acc.balance - Math.abs(tx.amount) };
           setSourceAccount(updatedAcc);
           return updatedAcc;
         }
+        
         return acc;
       });
-      return newAccounts;
     });
   };
 
@@ -84,10 +114,10 @@ const App: React.FC = () => {
       case Screen.PROFILE: return <ProfileScreen navigate={navigateWithHistory} />;
       
       // Detail Screens
-      case Screen.PRODUCT_DETAIL: return <ProductDetailScreen navigate={navigateWithHistory} account={selectedAccount} />;
+      case Screen.PRODUCT_DETAIL: return <ProductDetailScreen navigate={navigateWithHistory} account={selectedAccount} transactions={transactions} onSelectTransaction={setSelectedTransaction} />;
       case Screen.NOTIFICATIONS: return <NotificationsScreen navigate={navigateWithHistory} />;
       case Screen.ALL_TRANSACTIONS: return <AllTransactionsScreen navigate={navigateWithHistory} transactions={transactions} onSelectTransaction={setSelectedTransaction} />;
-      case Screen.TRANSACTION_DETAIL: return <TransactionDetailScreen navigate={navigateWithHistory} transaction={selectedTransaction} onBack={() => setCurrentScreen(previousScreen)} />;
+      case Screen.TRANSACTION_DETAIL: return <TransactionDetailScreen navigate={navigateWithHistory} transaction={selectedTransaction} accounts={accounts} onBack={() => setCurrentScreen(previousScreen)} />;
 
       // Transfer Flow
       case Screen.TRANSFER_SELECT: return <TransferSelect navigate={navigateWithHistory} setRecipient={setSelectedRecipient} setAmount={setTransferAmount} />;
@@ -101,11 +131,11 @@ const App: React.FC = () => {
       case Screen.EXCHANGE_SUCCESS: return <ExchangeSuccess navigate={navigateWithHistory} amount={exchangeAmount} currency={exchangeCurrency} />;
       
       // Card Payment Flow
-      case Screen.CARD_PAYMENT_SELECT: return <CardPaymentSelect navigate={setCurrentScreen} />;
-      case Screen.CARD_PAYMENT_AMOUNT: return <CardPaymentAmount navigate={setCurrentScreen} />;
-      case Screen.CARD_PAYMENT_SOURCE: return <CardPaymentSource navigate={setCurrentScreen} />;
-      case Screen.CARD_PAYMENT_CONFIRM: return <CardPaymentConfirm navigate={setCurrentScreen} />;
-      case Screen.CARD_PAYMENT_SUCCESS: return <CardPaymentSuccess navigate={setCurrentScreen} />;
+      case Screen.CARD_PAYMENT_SELECT: return <CardPaymentSelect navigate={setCurrentScreen} selectedCard={selectedAccount} />;
+      case Screen.CARD_PAYMENT_AMOUNT: return <CardPaymentAmount navigate={setCurrentScreen} selectedCard={selectedAccount} />;
+      case Screen.CARD_PAYMENT_SOURCE: return <CardPaymentSource navigate={setCurrentScreen} sourceAccount={sourceAccount} />;
+      case Screen.CARD_PAYMENT_CONFIRM: return <CardPaymentConfirm navigate={setCurrentScreen} sourceAccount={sourceAccount} selectedCard={selectedAccount} addTransaction={addTransaction} />;
+      case Screen.CARD_PAYMENT_SUCCESS: return <CardPaymentSuccess navigate={setCurrentScreen} selectedCard={selectedAccount} sourceAccount={sourceAccount} />;
 
       // Loan Flow
       case Screen.LOAN_SIMULATOR: return <LoanSimulator navigate={setCurrentScreen} />;
@@ -121,11 +151,11 @@ const App: React.FC = () => {
       case Screen.GOAL_DETAIL: return <GoalDetail navigate={setCurrentScreen} />;
 
       // Services Flow
-      case Screen.SERVICES_SELECT: return <ServicesSelect navigate={setCurrentScreen} />;
-      case Screen.SERVICES_DETAILS: return <ServicesDetails navigate={setCurrentScreen} />;
-      case Screen.SERVICES_DEBT: return <ServicesDebt navigate={setCurrentScreen} />;
-      case Screen.SERVICES_CONFIRM: return <ServicesConfirm navigate={setCurrentScreen} />;
-      case Screen.SERVICES_SUCCESS: return <ServicesSuccess navigate={setCurrentScreen} />;
+      case Screen.SERVICES_SELECT: return <ServicesSelect navigate={setCurrentScreen} onSelectService={setSelectedService} favorites={favoriteServices} setSupply={setServiceSupply} />;
+      case Screen.SERVICES_DETAILS: return <ServicesDetails navigate={setCurrentScreen} service={selectedService} supply={serviceSupply} setSupply={setServiceSupply} addFavorite={addFavoriteService} />;
+      case Screen.SERVICES_DEBT: return <ServicesDebt navigate={setCurrentScreen} service={selectedService} supply={serviceSupply} setAmount={setServiceAmount} />;
+      case Screen.SERVICES_CONFIRM: return <ServicesConfirm navigate={setCurrentScreen} service={selectedService} supply={serviceSupply} amount={serviceAmount} sourceAccount={sourceAccount} setSourceAccount={setSourceAccount} addTransaction={addTransaction} />;
+      case Screen.SERVICES_SUCCESS: return <ServicesSuccess navigate={setCurrentScreen} service={selectedService} amount={serviceAmount} sourceAccount={sourceAccount} />;
 
       // QR Flow
       case Screen.QR_SCAN: return <QRScan navigate={setCurrentScreen} />;
@@ -143,11 +173,12 @@ const App: React.FC = () => {
       case Screen.PROFILE_EDIT: return <ProfileEdit navigate={setCurrentScreen} />;
       case Screen.PROFILE_SECURITY: return <ProfileSecurity navigate={setCurrentScreen} />;
       case Screen.PROFILE_HELP: return <ProfileHelp navigate={setCurrentScreen} />;
-      case Screen.PROFILE_CARD_SETTINGS: return <ProfileCardSettings navigate={setCurrentScreen} />;
+      case Screen.PROFILE_CARD_SELECT: return <ProfileCardSelect navigate={setCurrentScreen} accounts={accounts} onSelectAccount={setSelectedAccount} />;
+      case Screen.PROFILE_CARD_SETTINGS: return <ProfileCardSettings navigate={setCurrentScreen} account={selectedAccount} />;
       case Screen.PROFILE_LOCATIONS: return <ProfileLocations navigate={setCurrentScreen} />;
 
       // Others
-      case Screen.CARD_PAYMENT: return <CardPaymentSelect navigate={setCurrentScreen} />;
+      case Screen.CARD_PAYMENT: return <CardPaymentSelect navigate={setCurrentScreen} selectedCard={selectedAccount} />;
       
       default: return <HomeScreen navigate={setCurrentScreen} onSelectAccount={setSelectedAccount} />;
     }

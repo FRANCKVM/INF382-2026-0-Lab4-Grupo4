@@ -1,7 +1,6 @@
+import { Header } from '../components/UI';
 import React from 'react';
 import { Screen, Transaction } from '../types';
-import { Header } from '../components/UI';
-import { ArrowDownCircle, ArrowUpCircle } from 'lucide-react';
 
 interface Props {
   navigate: (screen: Screen) => void;
@@ -75,8 +74,8 @@ export const AllTransactionsScreen: React.FC<Props> = ({ navigate, transactions,
                     {section.data.map((tx, i) => (
                         <div key={`${idx}-${i}`} onClick={() => handleTransactionClick(tx)} className={`flex items-center justify-between p-4 hover:bg-gray-50 transition-colors cursor-pointer ${i !== section.data.length - 1 ? 'border-b border-gray-50' : ''}`}>
                             <div className="flex items-center gap-4">
-                                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${tx.type === 'income' ? 'bg-green-100' : 'bg-red-50'}`}>
-                                    {tx.type === 'income' ? <ArrowDownCircle size={20} className="text-green-600" /> : <ArrowUpCircle size={20} className="text-red-500" />}
+                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${tx.type === 'income' ? 'bg-green-100 text-green-600' : 'bg-red-50 text-red-500'}`}>
+                                    <div className="font-bold text-sm">{tx.title[0]}</div>
                                 </div>
                                 <div>
                                     <h4 className="font-bold text-slate-900 text-sm">{tx.title}</h4>
@@ -84,7 +83,7 @@ export const AllTransactionsScreen: React.FC<Props> = ({ navigate, transactions,
                                 </div>
                             </div>
                             <div className="text-right">
-                                <span className={`font-bold block text-sm ${tx.type === 'income' ? 'text-green-600' : 'text-slate-900'}`}>
+                                <span className={`font-bold block text-sm ${tx.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
                                     {tx.type === 'income' ? '+' : '-'} {tx.currency === 'PEN' ? 'S/' : '$'} {Math.abs(tx.amount).toFixed(2)}
                                 </span>
                                 <span className="text-[10px] text-gray-400">{tx.date}</span>

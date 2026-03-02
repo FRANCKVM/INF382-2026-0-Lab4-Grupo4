@@ -10,7 +10,7 @@ interface ProfileProps {
 
 export const ProfileScreen: React.FC<ProfileProps> = ({ navigate }) => {
   const menuItems = [
-    { icon: <CreditCard size={20} />, label: 'Configuración de tarjetas', action: () => navigate(Screen.PROFILE_CARD_SETTINGS) },
+    { icon: <CreditCard size={20} />, label: 'Configuración de tarjetas', action: () => navigate(Screen.PROFILE_CARD_SELECT) },
     { icon: <Lock size={20} />, label: 'Seguridad y privacidad', action: () => navigate(Screen.PROFILE_SECURITY) },
     { icon: <MessageCircle size={20} />, label: 'Centro de Ayuda', action: () => navigate(Screen.PROFILE_HELP) },
     { icon: <MapPin size={20} />, label: 'Ubícanos', action: () => navigate(Screen.PROFILE_LOCATIONS) },

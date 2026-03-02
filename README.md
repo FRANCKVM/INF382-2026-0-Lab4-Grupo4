@@ -1,12 +1,12 @@
+<div align="center">
+<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
+</div>
 
-## Live Demo
-https://franckvm.github.io/INF382-2026-0-Lab4-Grupo4/
+# Run and deploy your AI Studio app
 
-Credenciales:
-DNI: 77665544
-Contraseña: eder123
+This contains everything you need to run your app locally.
 
-CCI para transferencia 24242525109075644521
+View your app in AI Studio: https://ai.studio/apps/395c0de5-279c-4cba-bd3d-f61812197be5
 
 ## Run Locally
 

@@ -1,38 +1,102 @@
 import React, { useState } from 'react';
-import { Screen } from '../../types';
+import { Screen, Account, Transaction } from '../../types';
 import { Header, Button } from '../../components/UI';
+import { ACCOUNTS } from '../../constants';
 import { 
     Search, Lightbulb, Droplets, Wifi, GraduationCap, Shield, 
     ChevronRight, Zap, Check, HelpCircle, AlertCircle, Wallet, Share, X,
-    FileText, Lock
+    FileText, Lock, Building2
 } from 'lucide-react';
 
 interface FlowProps {
   navigate: (screen: Screen) => void;
+  onSelectService?: (service: any) => void;
+  service?: any;
+  supply?: string;
+  setSupply?: (supply: string) => void;
+  amount?: number;
+  setAmount?: (amount: number) => void;
+  sourceAccount?: Account;
+  setSourceAccount?: (account: Account) => void;
+  addTransaction?: (tx: Transaction) => void;
+  favorites?: any[];
+  addFavorite?: (service: any, supply: string) => void;
 }
 
 // 1. Service Selection Screen
-export const ServicesSelect: React.FC<FlowProps> = ({ navigate }) => {
+export const ServicesSelect: React.FC<FlowProps> = ({ navigate, onSelectService, favorites = [], setSupply }) => {
+    const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+    const [searchTerm, setSearchTerm] = useState('');
+
     const categories = [
         { id: 1, name: 'Luz', icon: <Lightbulb size={24} className="text-blue-600" />, bg: 'bg-blue-50' },
         { id: 2, name: 'Agua', icon: <Droplets size={24} className="text-blue-600" />, bg: 'bg-blue-50' },
-        { id: 3, name: 'Internet y TV', icon: <Wifi size={24} className="text-blue-600" />, bg: 'bg-blue-50' },
+        { id: 3, name: 'Internet y Telefonía', icon: <Wifi size={24} className="text-blue-600" />, bg: 'bg-blue-50' },
         { id: 4, name: 'Educación', icon: <GraduationCap size={24} className="text-blue-600" />, bg: 'bg-blue-50' },
-        { id: 5, name: 'Seguros', icon: <Shield size={24} className="text-blue-600" />, bg: 'bg-blue-50' },
     ];
 
-    const favorites = [
-        { id: 1, name: 'Sedapal', detail: 'Departamento Lima', icon: 'S', color: 'bg-blue-500' },
-        { id: 2, name: 'Luz del Sur', detail: 'Casa Playa', icon: 'L', color: 'bg-amber-400' },
-        { id: 3, name: 'Claro', detail: 'Internet Hogar', icon: 'C', color: 'bg-red-500' },
-        { id: 4, name: 'Pacífico Seguros', detail: 'Seguro Vehicular', icon: 'P', color: 'bg-cyan-400' },
-    ];
+    const companiesByCategory: Record<string, any[]> = {
+        'Luz': [
+            { id: 'l1', name: 'Luz del Sur', detail: 'Lima Sur', icon: 'L', color: 'bg-amber-400', type: 'Luz', inputLabel: 'Número de suministro', inputType: 'number', inputPlaceholder: 'Ej. 1234567' },
+            { id: 'l2', name: 'Enel', detail: 'Lima Norte', icon: 'E', color: 'bg-orange-500', type: 'Luz', inputLabel: 'Número de cliente', inputType: 'number', inputPlaceholder: 'Ej. 9876543' },
+            { id: 'l3', name: 'Electro Dunas', detail: 'Ica', icon: 'E', color: 'bg-yellow-500', type: 'Luz', inputLabel: 'Número de suministro', inputType: 'number', inputPlaceholder: 'Ej. 1234567' },
+        ],
+        'Agua': [
+            { id: 'a1', name: 'Sedapal', detail: 'Lima y Callao', icon: 'S', color: 'bg-blue-500', type: 'Agua', inputLabel: 'Número de suministro', inputType: 'number', inputPlaceholder: 'Ej. 1234567' },
+            { id: 'a2', name: 'Epsel', detail: 'Lambayeque', icon: 'E', color: 'bg-cyan-500', type: 'Agua', inputLabel: 'Número de suministro', inputType: 'number', inputPlaceholder: 'Ej. 1234567' },
+            { id: 'a3', name: 'Sedapar', detail: 'Arequipa', icon: 'S', color: 'bg-blue-400', type: 'Agua', inputLabel: 'Número de conexión', inputType: 'number', inputPlaceholder: 'Ej. 1234567' },
+        ],
+        'Internet y Telefonía': [
+            { id: 'i1', name: 'Claro', detail: 'Servicios Fijos', icon: 'C', color: 'bg-red-500', type: 'Internet', inputLabel: 'Número de teléfono o DNI', inputType: 'text', inputPlaceholder: 'Ej. 999888777' },
+            { id: 'i2', name: 'Movistar', detail: 'Hogar', icon: 'M', color: 'bg-green-500', type: 'Internet', inputLabel: 'Número de teléfono o DNI', inputType: 'text', inputPlaceholder: 'Ej. 999888777' },
+            { id: 'i3', name: 'Entel', detail: 'Internet Fijo', icon: 'E', color: 'bg-blue-600', type: 'Internet', inputLabel: 'Número de teléfono o DNI', inputType: 'text', inputPlaceholder: 'Ej. 999888777' },
+            { id: 'i4', name: 'DirecTV', detail: 'Televisión', icon: 'D', color: 'bg-sky-500', type: 'Internet', inputLabel: 'DNI del titular', inputType: 'number', inputPlaceholder: 'Ej. 12345678' },
+        ],
+        'Educación': [
+            { id: 'e1', name: 'PUCP', detail: 'Pensiones', icon: 'P', color: 'bg-indigo-600', type: 'Educación', inputLabel: 'Código de alumno', inputType: 'number', inputPlaceholder: 'Ej. 20231234' },
+            { id: 'e2', name: 'UPC', detail: 'Pensiones', icon: 'U', color: 'bg-red-600', type: 'Educación', inputLabel: 'Código de alumno', inputType: 'text', inputPlaceholder: 'Ej. U20231234' },
+            { id: 'e3', name: 'Universidad de Lima', detail: 'Pensiones', icon: 'U', color: 'bg-orange-600', type: 'Educación', inputLabel: 'Código de alumno', inputType: 'number', inputPlaceholder: 'Ej. 20231234' },
+            { id: 'e4', name: 'Toulouse Lautrec', detail: 'Cuotas', icon: 'T', color: 'bg-pink-600', type: 'Educación', inputLabel: 'DNI del alumno', inputType: 'number', inputPlaceholder: 'Ej. 12345678' },
+        ]
+    };
+
+    const handleSelect = (service: any) => {
+        if (onSelectService) onSelectService(service);
+        if (setSupply) {
+            setSupply(service.savedSupply || '');
+        }
+        navigate(Screen.SERVICES_DETAILS);
+    };
+
+    // Filter companies based on search term
+    const getFilteredCompanies = () => {
+        if (!searchTerm) return [];
+        
+        const term = searchTerm.toLowerCase();
+        let allCompanies: any[] = [];
+        
+        if (selectedCategory) {
+            allCompanies = companiesByCategory[selectedCategory] || [];
+        } else {
+            Object.values(companiesByCategory).forEach(companies => {
+                allCompanies = [...allCompanies, ...companies];
+            });
+        }
+        
+        return allCompanies.filter(company => 
+            company.name.toLowerCase().includes(term) || 
+            company.detail.toLowerCase().includes(term)
+        );
+    };
+
+    const filteredCompanies = getFilteredCompanies();
+    const isSearching = searchTerm.length > 0;
 
     return (
         <div className="bg-gray-50 min-h-screen flex flex-col">
             <Header 
-                title="Pagar servicios" 
-                onBack={() => navigate(Screen.OPERATIONS)} 
+                title={selectedCategory ? selectedCategory : "Pagar servicios"} 
+                onBack={() => selectedCategory ? setSelectedCategory(null) : navigate(Screen.OPERATIONS)} 
                 rightElement={<HelpCircle className="text-slate-900" size={24} />}
             />
             
@@ -42,63 +106,142 @@ export const ServicesSelect: React.FC<FlowProps> = ({ navigate }) => {
                     <Search className="absolute left-4 top-3.5 text-blue-600" size={20} />
                     <input 
                         type="text" 
-                        placeholder="Busca una empresa o servicio" 
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        placeholder={selectedCategory ? `Busca en ${selectedCategory}` : "Busca una empresa o servicio"} 
                         className="w-full bg-white border border-gray-200 pl-12 pr-4 py-3.5 rounded-2xl outline-none focus:border-blue-600 text-sm shadow-sm" 
                     />
+                    {searchTerm && (
+                        <button 
+                            onClick={() => setSearchTerm('')}
+                            className="absolute right-4 top-3.5 text-gray-400 hover:text-gray-600"
+                        >
+                            <X size={20} />
+                        </button>
+                    )}
                 </div>
 
-                {/* Categories Grid */}
-                <div className="grid grid-cols-2 gap-4 mb-8">
-                    {categories.map((cat) => (
-                        <button 
-                            key={cat.id}
-                            onClick={() => navigate(Screen.SERVICES_DETAILS)} // For demo, any category goes to details
-                            className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-start gap-3 hover:border-blue-200 active:scale-[0.98] transition-all"
-                        >
-                            <div className={`w-10 h-10 rounded-full ${cat.bg} flex items-center justify-center`}>
-                                {cat.icon}
-                            </div>
-                            <span className="font-semibold text-slate-900">{cat.name}</span>
-                        </button>
-                    ))}
-                </div>
+                {isSearching ? (
+                    <>
+                        <h3 className="font-bold text-lg text-slate-900 mb-4">Resultados de búsqueda</h3>
+                        <div className="space-y-4 pb-6">
+                            {filteredCompanies.length > 0 ? (
+                                filteredCompanies.map((company) => (
+                                    <button 
+                                        key={company.id}
+                                        onClick={() => handleSelect(company)}
+                                        className="w-full bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between active:bg-gray-50 transition-colors"
+                                    >
+                                        <div className="flex items-center gap-4">
+                                            <div className={`w-12 h-12 rounded-2xl ${company.color} flex items-center justify-center text-white font-bold text-xl`}>
+                                                {company.icon}
+                                            </div>
+                                            <div className="text-left">
+                                                <h4 className="font-bold text-slate-900">{company.name}</h4>
+                                                <p className="text-sm text-gray-500">{company.detail}</p>
+                                            </div>
+                                        </div>
+                                        <ChevronRight className="text-gray-300" size={20} />
+                                    </button>
+                                ))
+                            ) : (
+                                <p className="text-center text-gray-500 py-8">No se encontraron resultados para "{searchTerm}"</p>
+                            )}
+                        </div>
+                    </>
+                ) : !selectedCategory ? (
+                    <>
+                        {/* Categories Grid */}
+                        <div className="grid grid-cols-2 gap-4 mb-8">
+                            {categories.map((cat) => (
+                                <button 
+                                    key={cat.id}
+                                    onClick={() => setSelectedCategory(cat.name)}
+                                    className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-start gap-3 hover:border-blue-200 active:scale-[0.98] transition-all"
+                                >
+                                    <div className={`w-10 h-10 rounded-full ${cat.bg} flex items-center justify-center`}>
+                                        {cat.icon}
+                                    </div>
+                                    <span className="font-semibold text-slate-900">{cat.name}</span>
+                                </button>
+                            ))}
+                        </div>
 
-                {/* Favorites List */}
-                <h3 className="font-bold text-lg text-slate-900 mb-4">Favoritos</h3>
-                <div className="space-y-4 pb-6">
-                    {favorites.map((fav) => (
-                        <button 
-                            key={fav.id}
-                            onClick={() => navigate(Screen.SERVICES_DETAILS)}
-                            className="w-full bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between active:bg-gray-50 transition-colors"
-                        >
-                            <div className="flex items-center gap-4">
-                                <div className={`w-12 h-12 rounded-2xl ${fav.color} flex items-center justify-center text-white font-bold text-xl`}>
-                                    {fav.icon}
-                                </div>
-                                <div className="text-left">
-                                    <h4 className="font-bold text-slate-900">{fav.name}</h4>
-                                    <p className="text-sm text-gray-500">{fav.detail}</p>
-                                </div>
-                            </div>
-                            <ChevronRight className="text-gray-300" size={20} />
-                        </button>
-                    ))}
-                </div>
+                        {/* Favorites List */}
+                        <h3 className="font-bold text-lg text-slate-900 mb-4">Favoritos</h3>
+                        <div className="space-y-4 pb-6">
+                            {favorites.map((fav) => (
+                                <button 
+                                    key={fav.id}
+                                    onClick={() => handleSelect(fav)}
+                                    className="w-full bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between active:bg-gray-50 transition-colors"
+                                >
+                                    <div className="flex items-center gap-4">
+                                        <div className={`w-12 h-12 rounded-2xl ${fav.color} flex items-center justify-center text-white font-bold text-xl`}>
+                                            {fav.icon}
+                                        </div>
+                                        <div className="text-left">
+                                            <h4 className="font-bold text-slate-900">{fav.name}</h4>
+                                            <p className="text-sm text-gray-500">{fav.detail}</p>
+                                        </div>
+                                    </div>
+                                    <ChevronRight className="text-gray-300" size={20} />
+                                </button>
+                            ))}
+                        </div>
+                    </>
+                ) : (
+                    <>
+                        <h3 className="font-bold text-lg text-slate-900 mb-4">Empresas de {selectedCategory}</h3>
+                        <div className="space-y-4 pb-6">
+                            {companiesByCategory[selectedCategory]?.map((company) => (
+                                <button 
+                                    key={company.id}
+                                    onClick={() => handleSelect(company)}
+                                    className="w-full bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between active:bg-gray-50 transition-colors"
+                                >
+                                    <div className="flex items-center gap-4">
+                                        <div className={`w-12 h-12 rounded-2xl ${company.color} flex items-center justify-center text-white font-bold text-xl`}>
+                                            {company.icon}
+                                        </div>
+                                        <div className="text-left">
+                                            <h4 className="font-bold text-slate-900">{company.name}</h4>
+                                            <p className="text-sm text-gray-500">{company.detail}</p>
+                                        </div>
+                                    </div>
+                                    <ChevronRight className="text-gray-300" size={20} />
+                                </button>
+                            ))}
+                        </div>
+                    </>
+                )}
             </div>
         </div>
     );
 };
 
 // 2. Service Details (Input Supply)
-export const ServicesDetails: React.FC<FlowProps> = ({ navigate }) => {
-    const [supply, setSupply] = useState('');
+export const ServicesDetails: React.FC<FlowProps> = ({ navigate, service, supply, setSupply, addFavorite }) => {
+    const [saveFavorite, setSaveFavorite] = useState(false);
+
+    if (!service) return null;
+
+    const handleContinue = () => {
+        if (supply && supply.length > 3) {
+            if (saveFavorite && addFavorite) {
+                addFavorite(service, supply);
+            }
+            navigate(Screen.SERVICES_DEBT);
+        } else {
+            alert('Por favor ingresa un número válido.');
+        }
+    };
 
     return (
         <div className="bg-gray-50 min-h-screen flex flex-col">
             <Header title="" onBack={() => navigate(Screen.SERVICES_SELECT)} />
             
-            <div className="px-6">
+            <div className="px-6 flex-1 overflow-y-auto">
                  <p className="text-xs text-blue-600 font-bold uppercase tracking-wider mb-2">PASO 2 DE 3</p>
                  <div className="w-full bg-gray-200 h-1 rounded-full overflow-hidden mb-6">
                     <div className="bg-blue-600 w-2/3 h-full rounded-full"></div>
@@ -109,12 +252,12 @@ export const ServicesDetails: React.FC<FlowProps> = ({ navigate }) => {
                 {/* Selected Company */}
                 <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between mb-8">
                     <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center">
-                            <Zap className="text-amber-500 fill-amber-500" size={20} />
+                        <div className={`w-12 h-12 rounded-full ${service.color || 'bg-blue-500'} flex items-center justify-center text-white font-bold`}>
+                            {service.icon || <Building2 size={20} />}
                         </div>
                         <div>
                             <p className="text-xs text-gray-500 uppercase font-bold tracking-wider mb-0.5">EMPRESA</p>
-                            <h4 className="font-bold text-slate-900 text-lg">Luz del Sur</h4>
+                            <h4 className="font-bold text-slate-900 text-lg">{service.name}</h4>
                         </div>
                     </div>
                     <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center">
@@ -123,13 +266,13 @@ export const ServicesDetails: React.FC<FlowProps> = ({ navigate }) => {
                 </div>
 
                 {/* Input */}
-                <label className="block text-slate-900 font-medium text-lg mb-3">Número de suministro</label>
+                <label className="block text-slate-900 font-medium text-lg mb-3">{service.inputLabel || 'Número de suministro / código'}</label>
                 <div className="relative mb-3">
                     <input 
-                        type="number" 
-                        value={supply}
-                        onChange={(e) => setSupply(e.target.value)}
-                        placeholder="Ej. 1234567"
+                        type={service.inputType || 'text'} 
+                        value={supply || ''}
+                        onChange={(e) => setSupply && setSupply(e.target.value)}
+                        placeholder={service.inputPlaceholder || "Ej. 1234567"}
                         className="w-full bg-white border border-gray-300 rounded-xl px-4 py-4 text-lg outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-all"
                     />
                     <div className="absolute right-4 top-4 bg-blue-600 rounded-full p-0.5">
@@ -137,13 +280,18 @@ export const ServicesDetails: React.FC<FlowProps> = ({ navigate }) => {
                     </div>
                 </div>
                 <p className="text-slate-500 text-sm leading-relaxed mb-8">
-                    Ingresa el código que aparece en la parte superior derecha de tu recibo.
+                    Ingresa el dato solicitado para buscar tus recibos pendientes.
                 </p>
 
                 {/* Save Favorite */}
                 <div className="flex items-center gap-3 mb-8">
                      <div className="relative flex items-center">
-                        <input type="checkbox" className="peer h-6 w-6 cursor-pointer appearance-none rounded-lg border-2 border-gray-300 transition-all checked:border-blue-600 checked:bg-blue-600" />
+                        <input 
+                            type="checkbox" 
+                            checked={saveFavorite}
+                            onChange={(e) => setSaveFavorite(e.target.checked)}
+                            className="peer h-6 w-6 cursor-pointer appearance-none rounded-lg border-2 border-gray-300 transition-all checked:border-blue-600 checked:bg-blue-600" 
+                        />
                         <Check size={14} className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-white opacity-0 peer-checked:opacity-100" strokeWidth={4} />
                     </div>
                     <div>
@@ -151,20 +299,69 @@ export const ServicesDetails: React.FC<FlowProps> = ({ navigate }) => {
                         <p className="text-xs text-gray-500">Para futuros pagos rápidos</p>
                     </div>
                 </div>
+            </div>
 
-                <div className="mt-auto pb-6">
-                    <Button onClick={() => navigate(Screen.SERVICES_DEBT)}>Continuar</Button>
-                </div>
+            <div className="p-6 bg-white border-t border-gray-100">
+                <Button onClick={handleContinue} disabled={!supply || supply.length < 4}>Continuar</Button>
             </div>
         </div>
     );
 };
 
 // 3. Debt Selection (Pending Bills)
-export const ServicesDebt: React.FC<FlowProps> = ({ navigate }) => {
-    // Mock state for checkboxes
-    const [selected, setSelected] = useState([true, true, false]);
+export const ServicesDebt: React.FC<FlowProps> = ({ navigate, service, supply, setAmount }) => {
+    const bills = React.useMemo(() => {
+        if (!service) return [];
+        const months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+        
+        // January and February 2026 (last 2 months relative to March 2026)
+        const jan = { month: 0, year: 2026 };
+        const feb = { month: 1, year: 2026 };
+
+        let baseAmount = 50;
+        if (service.type === 'Luz') baseAmount = 125.40;
+        else if (service.type === 'Agua') baseAmount = 42.80;
+        else if (service.type === 'Internet') baseAmount = 109.90;
+        else if (service.type === 'Educación') baseAmount = 950.00;
+
+        // Personalize amount based on service ID
+        const seed = service.id.split('').reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0);
+        const getAmount = (base: number, offset: number) => base + (seed % 25) + (offset * 3.25);
+
+        return [
+            { 
+                id: 0, 
+                month: `${months[jan.month]} ${jan.year}`, 
+                amount: getAmount(baseAmount, 0), 
+                status: `Vencido 15 ${months[jan.month].slice(0, 3)}`, 
+                color: 'text-red-500' 
+            },
+            { 
+                id: 1, 
+                month: `${months[feb.month]} ${feb.year}`, 
+                amount: getAmount(baseAmount, 1), 
+                status: `Vence 15 ${months[feb.month].slice(0, 3)}`, 
+                color: 'text-orange-500' 
+            }
+        ];
+    }, [service]);
+
+    const [selected, setSelected] = useState(bills.map(() => true));
     
+    if (!service) return null;
+
+    const totalAmount = bills.reduce((acc, bill, index) => selected[index] ? acc + bill.amount : acc, 0);
+
+    const handleContinue = () => {
+        if (setAmount) setAmount(totalAmount);
+        navigate(Screen.SERVICES_CONFIRM);
+    };
+
+    const selectAll = () => {
+        const allSelected = selected.every(Boolean);
+        setSelected(selected.map(() => !allSelected));
+    };
+
     return (
         <div className="bg-gray-50 min-h-screen flex flex-col">
             <Header title="Recibos pendientes" onBack={() => navigate(Screen.SERVICES_DETAILS)} />
@@ -172,79 +369,47 @@ export const ServicesDebt: React.FC<FlowProps> = ({ navigate }) => {
             <div className="px-6 py-4 flex-1 flex flex-col">
                 {/* Header Info */}
                 <div className="flex items-center gap-4 mb-6">
-                     <div className="w-14 h-14 rounded-2xl bg-amber-400 flex items-center justify-center shadow-lg shadow-amber-400/20">
-                        <Zap className="text-white fill-white" size={28} />
+                     <div className={`w-14 h-14 rounded-2xl ${service.color || 'bg-blue-500'} flex items-center justify-center shadow-lg text-white font-bold text-2xl`}>
+                        {service.icon || <Building2 size={28} />}
                     </div>
                     <div>
-                        <h2 className="text-xl font-bold text-slate-900">Luz del Sur</h2>
-                        <p className="text-sm text-gray-500">Suministro 1234567</p>
+                        <h2 className="text-xl font-bold text-slate-900">{service.name}</h2>
+                        <p className="text-sm text-gray-500">Suministro {supply}</p>
                     </div>
                 </div>
 
                 <div className="flex justify-between items-center mb-4">
                     <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">SELECCIONAR DEUDA</span>
-                    <button className="text-blue-600 font-bold text-sm">Seleccionar todo</button>
+                    <button onClick={selectAll} className="text-blue-600 font-bold text-sm">
+                        {selected.every(Boolean) ? 'Deseleccionar todo' : 'Seleccionar todo'}
+                    </button>
                 </div>
 
                 <div className="space-y-4">
-                    {/* Bill 1 */}
-                    <div className={`bg-white p-4 rounded-2xl border-2 transition-all ${selected[0] ? 'border-blue-600 shadow-md' : 'border-transparent shadow-sm'}`}>
-                        <div className="flex justify-between items-start mb-2">
-                            <div>
-                                <h4 className="font-bold text-slate-900">Octubre 2023</h4>
-                                <div className="flex items-center gap-1 text-red-500 mt-1">
-                                    <AlertCircle size={12} />
-                                    <span className="text-xs font-bold">Vencido 15 Oct</span>
+                    {bills.map((bill, index) => (
+                        <div key={bill.id} className={`bg-white p-4 rounded-2xl border-2 transition-all ${selected[index] ? 'border-blue-600 shadow-md' : 'border-transparent shadow-sm'}`}>
+                            <div className="flex justify-between items-start mb-2">
+                                <div>
+                                    <h4 className="font-bold text-slate-900">{bill.month}</h4>
+                                    <div className={`flex items-center gap-1 mt-1 ${bill.color}`}>
+                                        {index < 2 && <AlertCircle size={12} />}
+                                        <span className="text-xs font-bold">{bill.status}</span>
+                                    </div>
+                                </div>
+                                <div 
+                                    onClick={() => {
+                                        const newSelected = [...selected];
+                                        newSelected[index] = !newSelected[index];
+                                        setSelected(newSelected);
+                                    }}
+                                    className={`w-6 h-6 rounded-full border-2 flex items-center justify-center cursor-pointer ${selected[index] ? 'bg-blue-600 border-blue-600' : 'border-gray-300'}`}
+                                >
+                                    {selected[index] && <Check size={14} className="text-white" strokeWidth={3} />}
                                 </div>
                             </div>
-                            <div 
-                                onClick={() => setSelected([!selected[0], selected[1], selected[2]])}
-                                className={`w-6 h-6 rounded-full border-2 flex items-center justify-center cursor-pointer ${selected[0] ? 'bg-blue-600 border-blue-600' : 'border-gray-300'}`}
-                            >
-                                {selected[0] && <Check size={14} className="text-white" strokeWidth={3} />}
-                            </div>
+                            <p className="text-right text-lg font-bold text-slate-900">S/ {bill.amount.toFixed(2)}</p>
                         </div>
-                        <p className="text-right text-lg font-bold text-slate-900">S/ 142.50</p>
-                    </div>
-
-                    {/* Bill 2 */}
-                    <div className={`bg-white p-4 rounded-2xl border-2 transition-all ${selected[1] ? 'border-blue-600 shadow-md' : 'border-transparent shadow-sm'}`}>
-                        <div className="flex justify-between items-start mb-2">
-                            <div>
-                                <h4 className="font-bold text-slate-900">Noviembre 2023</h4>
-                                <div className="flex items-center gap-1 text-orange-500 mt-1">
-                                    <AlertCircle size={12} />
-                                    <span className="text-xs font-bold">Vence 15 Nov</span>
-                                </div>
-                            </div>
-                            <div 
-                                onClick={() => setSelected([selected[0], !selected[1], selected[2]])}
-                                className={`w-6 h-6 rounded-full border-2 flex items-center justify-center cursor-pointer ${selected[1] ? 'bg-blue-600 border-blue-600' : 'border-gray-300'}`}
-                            >
-                                {selected[1] && <Check size={14} className="text-white" strokeWidth={3} />}
-                            </div>
-                        </div>
-                        <p className="text-right text-lg font-bold text-slate-900">S/ 135.00</p>
-                    </div>
-
-                    {/* Bill 3 */}
-                    <div className={`bg-white p-4 rounded-2xl border-2 transition-all ${selected[2] ? 'border-blue-600 shadow-md' : 'border-transparent shadow-sm'}`}>
-                        <div className="flex justify-between items-start mb-2">
-                            <div>
-                                <h4 className="font-bold text-slate-900">Diciembre 2023</h4>
-                                <div className="flex items-center gap-1 text-gray-400 mt-1">
-                                    <span className="text-xs">Vence 15 Dic</span>
-                                </div>
-                            </div>
-                            <div 
-                                onClick={() => setSelected([selected[0], selected[1], !selected[2]])}
-                                className={`w-6 h-6 rounded-full border-2 flex items-center justify-center cursor-pointer ${selected[2] ? 'bg-blue-600 border-blue-600' : 'border-gray-300'}`}
-                            >
-                                {selected[2] && <Check size={14} className="text-white" strokeWidth={3} />}
-                            </div>
-                        </div>
-                        <p className="text-right text-lg font-bold text-slate-500">S/ 120.00</p>
-                    </div>
+                    ))}
                 </div>
 
                 <div className="flex-1"></div>
@@ -255,10 +420,10 @@ export const ServicesDebt: React.FC<FlowProps> = ({ navigate }) => {
                         <span className="text-gray-500 font-medium">Total a pagar</span>
                         <div className="flex items-end gap-1">
                             <span className="text-sm font-bold text-gray-400 mb-1">S/</span>
-                            <span className="text-3xl font-bold text-slate-900">277.50</span>
+                            <span className="text-3xl font-bold text-slate-900">{totalAmount.toFixed(2)}</span>
                         </div>
                     </div>
-                    <Button onClick={() => navigate(Screen.SERVICES_CONFIRM)} icon={<ChevronRight className="order-last" />}>
+                    <Button onClick={handleContinue} disabled={totalAmount === 0} icon={<ChevronRight className="order-last" />}>
                         Continuar
                     </Button>
                 </div>
@@ -268,7 +433,26 @@ export const ServicesDebt: React.FC<FlowProps> = ({ navigate }) => {
 };
 
 // 4. Payment Confirmation
-export const ServicesConfirm: React.FC<FlowProps> = ({ navigate }) => {
+export const ServicesConfirm: React.FC<FlowProps> = ({ navigate, service, supply, amount, sourceAccount, setSourceAccount, addTransaction }) => {
+    const [isSelectorOpen, setIsSelectorOpen] = useState(false);
+    
+    if (!service || !sourceAccount) return null;
+
+    const handleConfirm = () => {
+        if (addTransaction && amount) {
+            addTransaction({
+                id: Math.random().toString(),
+                title: service.name,
+                subtitle: `Pago de servicio - ${supply}`,
+                amount: -amount,
+                currency: 'PEN',
+                date: 'Hoy',
+                type: 'expense'
+            });
+        }
+        navigate(Screen.SERVICES_SUCCESS);
+    };
+
     return (
         <div className="bg-gray-50 min-h-screen flex flex-col">
             <Header title="Confirma tu pago" onBack={() => navigate(Screen.SERVICES_DEBT)} />
@@ -279,22 +463,22 @@ export const ServicesConfirm: React.FC<FlowProps> = ({ navigate }) => {
                 <div className="w-8 h-1.5 bg-blue-600 rounded-full"></div>
             </div>
 
-            <div className="px-4 flex-1 pb-6">
+            <div className="px-6 flex-1 overflow-y-auto pb-6">
                 <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 mb-6">
                     <div className="text-center mb-8 border-b border-gray-50 pb-6">
                         <p className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-2">TOTAL A PAGAR</p>
-                        <h1 className="text-4xl font-bold text-slate-900">S/ 142.50</h1>
+                        <h1 className="text-4xl font-bold text-slate-900">S/ {amount?.toFixed(2)}</h1>
                     </div>
 
                     <div className="space-y-6">
                         {/* Service Item */}
                         <div className="flex items-start gap-4">
-                            <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center shrink-0">
-                                <Zap className="text-blue-600 fill-blue-600" size={20} />
+                            <div className={`w-10 h-10 rounded-xl ${service.color || 'bg-blue-500'} flex items-center justify-center shrink-0 text-white font-bold`}>
+                                {service.icon || <Building2 size={20} />}
                             </div>
                             <div>
-                                <p className="text-xs text-gray-500 font-medium mb-0.5">Servicio</p>
-                                <h4 className="font-bold text-slate-900">Luz del Sur</h4>
+                                <p className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-0.5">Servicio</p>
+                                <h4 className="font-bold text-slate-900">{service.name}</h4>
                             </div>
                         </div>
 
@@ -304,50 +488,89 @@ export const ServicesConfirm: React.FC<FlowProps> = ({ navigate }) => {
                                 <FileText className="text-slate-600" size={20} />
                             </div>
                             <div>
-                                <p className="text-xs text-gray-500 font-medium mb-0.5">Suministro</p>
-                                <h4 className="font-bold text-slate-900">1234567</h4>
+                                <p className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-0.5">Suministro</p>
+                                <h4 className="font-bold text-slate-900">{supply}</h4>
                             </div>
                         </div>
 
                         <div className="h-px bg-gray-100"></div>
 
-                        {/* From Account */}
-                        <div className="flex items-start gap-4">
-                             <div className="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center shrink-0">
-                                <Wallet className="text-slate-600" size={20} />
+                        {/* From Account Dropdown */}
+                        <div className="space-y-2">
+                            <p className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-0.5">Medio de pago</p>
+                            <div 
+                                onClick={() => setIsSelectorOpen(!isSelectorOpen)}
+                                className={`p-4 rounded-2xl border-2 transition-all cursor-pointer flex justify-between items-center ${isSelectorOpen ? 'border-blue-600 bg-blue-50' : 'border-gray-50 bg-gray-50'}`}
+                            >
+                                <div className="flex items-center gap-3">
+                                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${sourceAccount.type === 'CREDIT' ? 'bg-purple-100 text-purple-600' : 'bg-blue-100 text-blue-600'}`}>
+                                        <Wallet size={16} />
+                                    </div>
+                                    <div>
+                                        <p className="font-bold text-slate-900 text-sm">{sourceAccount.name}</p>
+                                        <p className="text-[10px] text-gray-500">
+                                            **** {sourceAccount.number.slice(-4)}
+                                        </p>
+                                    </div>
+                                </div>
+                                <ChevronRight className={`text-gray-400 transition-transform ${isSelectorOpen ? 'rotate-90' : ''}`} size={18} />
                             </div>
-                            <div>
-                                <p className="text-xs text-gray-500 font-medium mb-0.5">Desde</p>
-                                <h4 className="font-bold text-slate-900">Cuenta Simple Soles</h4>
-                                <p className="text-xs text-gray-400 mt-0.5">Saldo disponible: S/ 2,405.00</p>
-                            </div>
+
+                            {isSelectorOpen && (
+                                <div className="mt-2 space-y-2 animate-in slide-in-from-top-2 duration-200">
+                                    {ACCOUNTS.map((acc) => (
+                                        <div 
+                                            key={acc.id}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                if (setSourceAccount) setSourceAccount(acc);
+                                                setIsSelectorOpen(false);
+                                            }}
+                                            className={`p-3 rounded-xl border transition-all cursor-pointer flex justify-between items-center ${sourceAccount.id === acc.id ? 'border-blue-200 bg-blue-50' : 'border-gray-100 bg-white'}`}
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${acc.type === 'CREDIT' ? 'bg-purple-50 text-purple-500' : 'bg-blue-50 text-blue-500'}`}>
+                                                    <Wallet size={14} />
+                                                </div>
+                                                <div>
+                                                    <p className="font-bold text-slate-900 text-xs">{acc.name}</p>
+                                                    <p className="text-[10px] text-gray-400">
+                                                        {acc.currency === 'PEN' ? 'S/' : '$'} {acc.balance.toLocaleString()}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            {sourceAccount.id === acc.id && (
+                                                <Check size={14} className="text-blue-600" strokeWidth={3} />
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
 
-                <div className="flex items-center justify-center gap-2 text-gray-400 mb-8">
+                <div className="flex items-center justify-center gap-2 text-gray-400 mb-4">
                     <Lock size={14} />
                     <span className="text-xs font-medium">Pagos 100% seguros y encriptados</span>
                 </div>
+            </div>
 
-                <div className="mt-auto">
-                    <Button onClick={() => navigate(Screen.SERVICES_SUCCESS)} icon={<Check size={18} className="order-last" />}>Confirmar pago</Button>
-                    <button onClick={() => navigate(Screen.HOME)} className="w-full py-4 text-gray-400 font-medium text-sm mt-2">Cancelar operación</button>
-                </div>
+            <div className="p-6 bg-white border-t border-gray-100">
+                <Button onClick={handleConfirm} icon={<Check size={18} className="order-last" />}>Confirmar pago</Button>
             </div>
         </div>
     );
 };
 
 // 5. Success Screen
-export const ServicesSuccess: React.FC<FlowProps> = ({ navigate }) => {
+export const ServicesSuccess: React.FC<FlowProps> = ({ navigate, service, amount, sourceAccount }) => {
+    if (!service || !sourceAccount) return null;
+
     return (
         <div className="bg-gray-50 min-h-screen flex flex-col p-6 pt-12 items-center relative">
             <div className="w-full flex items-center justify-between mb-10">
                 <span className="text-lg font-bold text-slate-900 mx-auto">Comprobante</span>
-                <button className="absolute right-0 top-12 p-2">
-                     <Share size={24} className="text-slate-900" />
-                </button>
             </div>
 
             <div className="w-32 h-32 bg-blue-100 rounded-full flex items-center justify-center mb-6">
@@ -357,16 +580,16 @@ export const ServicesSuccess: React.FC<FlowProps> = ({ navigate }) => {
             </div>
 
             <h2 className="text-2xl font-bold text-slate-900 mb-2">¡Pago exitoso!</h2>
-            <h1 className="text-4xl font-bold text-slate-900 mb-10">S/ 142.50</h1>
+            <h1 className="text-4xl font-bold text-slate-900 mb-10">S/ {amount?.toFixed(2)}</h1>
 
             <div className="w-full bg-white rounded-3xl p-6 shadow-sm mb-6">
                 <div className="flex items-center gap-4 mb-6">
-                    <div className="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center">
-                        <Zap className="text-amber-500 fill-amber-500" size={24} />
+                    <div className={`w-12 h-12 rounded-xl ${service.color || 'bg-blue-500'} flex items-center justify-center text-white font-bold`}>
+                        {service.icon || <Building2 size={24} />}
                     </div>
                     <div>
                         <p className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-1">SERVICIO</p>
-                        <h3 className="font-bold text-lg text-slate-900">Luz del Sur</h3>
+                        <h3 className="font-bold text-lg text-slate-900">{service.name}</h3>
                     </div>
                 </div>
 
@@ -375,32 +598,20 @@ export const ServicesSuccess: React.FC<FlowProps> = ({ navigate }) => {
                 <div className="space-y-4">
                     <div className="flex justify-between text-sm">
                         <span className="text-gray-500">Nro. Operación</span>
-                        <span className="font-bold text-slate-900">00928374</span>
+                        <span className="font-bold text-slate-900">{Math.floor(Math.random() * 10000000).toString().padStart(8, '0')}</span>
                     </div>
                     <div className="flex justify-between text-sm">
                         <span className="text-gray-500">Fecha</span>
                         <div className="text-right">
-                             <p className="font-bold text-slate-900">24 Oct, 2023</p>
-                             <p className="text-xs text-gray-400">10:30 AM</p>
-                        </div>
-                    </div>
-                     <div className="flex justify-between text-sm items-center">
-                        <span className="text-gray-500">Cuenta de cargo</span>
-                        <div className="flex items-center gap-2">
-                             <div className="w-6 h-4 bg-gray-300 rounded-sm"></div>
-                             <span className="font-bold text-slate-900">**** 4521</span>
+                             <p className="font-bold text-slate-900">{new Date().toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
+                             <p className="text-xs text-gray-400">{new Date().toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' })}</p>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <button className="flex items-center gap-2 text-blue-600 font-bold text-sm mb-auto">
-                <Share size={18} />
-                Guardar constancia
-            </button>
-
-            <div className="w-full mt-8">
-                <Button onClick={() => navigate(Screen.HOME)}>Volver al inicio</Button>
+            <div className="w-full mt-auto">
+                <Button variant="outline" onClick={() => navigate(Screen.HOME)}>Volver al inicio</Button>
             </div>
             
              <div className="w-32 h-1 bg-gray-300 rounded-full mt-6 mx-auto"></div>

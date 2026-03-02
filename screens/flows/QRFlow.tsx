@@ -279,7 +279,7 @@ export const QRSuccess: React.FC<FlowProps> = ({ navigate }) => {
             </div>
 
             <div className="w-full mt-6">
-                <Button onClick={() => navigate(Screen.HOME)}>Volver al inicio</Button>
+                <Button variant="outline" onClick={() => navigate(Screen.HOME)}>Volver al inicio</Button>
             </div>
         </div>
     );

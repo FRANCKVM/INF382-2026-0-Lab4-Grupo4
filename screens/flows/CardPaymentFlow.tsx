@@ -3,13 +3,17 @@ import { Screen } from '../../types';
 import { ACCOUNTS } from '../../constants';
 import { Header, Button } from '../../components/UI';
 import { ChevronDown, CreditCard, Wallet, Check, Share, Info, ArrowDown, ChevronRight } from 'lucide-react';
+import { Account, Transaction } from '../../types';
 
 interface FlowProps {
   navigate: (screen: Screen) => void;
+  sourceAccount?: Account;
+  addTransaction?: (tx: Transaction) => void;
+  selectedCard?: Account;
 }
 
 // 1. Select Card Screen (NEW)
-export const CardPaymentSelect: React.FC<FlowProps> = ({ navigate }) => {
+export const CardPaymentSelect: React.FC<FlowProps> = ({ navigate, selectedCard }) => {
     // Filter only credit cards
     const creditCards = ACCOUNTS.filter(acc => acc.type === 'CREDIT');
 
@@ -27,7 +31,7 @@ export const CardPaymentSelect: React.FC<FlowProps> = ({ navigate }) => {
                             <div 
                                 key={card.id}
                                 onClick={() => navigate(Screen.CARD_PAYMENT_AMOUNT)}
-                                className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between cursor-pointer hover:border-blue-200 hover:shadow-md transition-all active:scale-[0.98]"
+                                className={`bg-white p-5 rounded-2xl shadow-sm border-2 flex items-center justify-between cursor-pointer transition-all active:scale-[0.98] ${selectedCard?.id === card.id ? 'border-blue-600' : 'border-gray-100'}`}
                             >
                                 <div className="flex items-center gap-4">
                                     <div className="w-12 h-12 bg-slate-900 rounded-xl flex items-center justify-center text-white">
@@ -56,7 +60,7 @@ export const CardPaymentSelect: React.FC<FlowProps> = ({ navigate }) => {
 };
 
 // 2. Amount Selection Screen
-export const CardPaymentAmount: React.FC<FlowProps> = ({ navigate }) => {
+export const CardPaymentAmount: React.FC<FlowProps> = ({ navigate, selectedCard }) => {
   const [selectedOption, setSelectedOption] = useState<'month' | 'min' | 'total' | 'other'>('month');
 
   return (
@@ -65,7 +69,7 @@ export const CardPaymentAmount: React.FC<FlowProps> = ({ navigate }) => {
       
       <div className="px-6 mt-4 flex-1 flex flex-col">
         <h2 className="text-2xl font-bold text-slate-900 mb-2">¿Cuánto quieres pagar?</h2>
-        <p className="text-gray-500 text-sm mb-8">Selecciona una de las opciones para continuar con el pago de tu Visa Signature.</p>
+        <p className="text-gray-500 text-sm mb-8">Selecciona una de las opciones para continuar con el pago de tu {selectedCard?.name || 'Visa Signature'}.</p>
 
         <div className="space-y-4">
             {/* Payment Options */}
@@ -132,9 +136,7 @@ export const CardPaymentAmount: React.FC<FlowProps> = ({ navigate }) => {
 };
 
 // 3. Source Account Selection Screen
-export const CardPaymentSource: React.FC<FlowProps> = ({ navigate }) => {
-    const [selectedAccount, setSelectedAccount] = useState('1');
-
+export const CardPaymentSource: React.FC<FlowProps> = ({ navigate, sourceAccount }) => {
     return (
         <div className="bg-gray-50 min-h-screen flex flex-col">
              <Header title="Pagar Tarjeta" onBack={() => navigate(Screen.CARD_PAYMENT_AMOUNT)} />
@@ -149,59 +151,26 @@ export const CardPaymentSource: React.FC<FlowProps> = ({ navigate }) => {
                 <p className="text-gray-500 text-sm mb-6">Selecciona la cuenta de la cual se debitará el pago.</p>
 
                 <div className="space-y-4">
-                    <div 
-                        onClick={() => setSelectedAccount('1')}
-                        className={`bg-white p-4 rounded-2xl border-2 cursor-pointer flex items-center justify-between shadow-sm ${selectedAccount === '1' ? 'border-blue-600' : 'border-transparent'}`}
-                    >
-                        <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center text-blue-600">
-                                <Wallet size={24} />
+                    {ACCOUNTS.filter(acc => acc.type === 'DEBIT').map(acc => (
+                        <div 
+                            key={acc.id}
+                            onClick={() => navigate(Screen.CARD_PAYMENT_CONFIRM)}
+                            className={`bg-white p-4 rounded-2xl border-2 cursor-pointer flex items-center justify-between shadow-sm ${sourceAccount?.id === acc.id ? 'border-blue-600' : 'border-transparent'}`}
+                        >
+                            <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center text-blue-600">
+                                    <Wallet size={24} />
+                                </div>
+                                <div>
+                                    <h4 className="font-bold text-slate-900">{acc.name}</h4>
+                                    <p className="text-sm text-gray-500">Saldo: S/ {acc.balance.toLocaleString()}</p>
+                                </div>
                             </div>
-                            <div>
-                                <h4 className="font-bold text-slate-900">Cuenta Simple Soles</h4>
-                                <p className="text-sm text-gray-500">Saldo: S/ 4,250.80</p>
-                            </div>
-                        </div>
-                        <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${selectedAccount === '1' ? 'border-blue-600' : 'border-gray-300'}`}>
-                            {selectedAccount === '1' && <div className="w-3 h-3 bg-blue-600 rounded-full" />}
-                        </div>
-                    </div>
-
-                    <div 
-                        onClick={() => setSelectedAccount('2')}
-                        className={`bg-white p-4 rounded-2xl border-2 cursor-pointer flex items-center justify-between shadow-sm ${selectedAccount === '2' ? 'border-blue-600' : 'border-transparent'}`}
-                    >
-                        <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center text-gray-600">
-                                <span className="font-bold text-lg">$</span>
-                            </div>
-                            <div>
-                                <h4 className="font-bold text-slate-900">Cuenta Dólares</h4>
-                                <p className="text-sm text-gray-500">Saldo: $ 1,120.00</p>
+                            <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${sourceAccount?.id === acc.id ? 'border-blue-600' : 'border-gray-300'}`}>
+                                {sourceAccount?.id === acc.id && <div className="w-3 h-3 bg-blue-600 rounded-full" />}
                             </div>
                         </div>
-                        <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${selectedAccount === '2' ? 'border-blue-600' : 'border-gray-300'}`}>
-                            {selectedAccount === '2' && <div className="w-3 h-3 bg-blue-600 rounded-full" />}
-                        </div>
-                    </div>
-
-                    <div 
-                        onClick={() => setSelectedAccount('3')}
-                        className={`bg-white p-4 rounded-2xl border-2 cursor-pointer flex items-center justify-between shadow-sm ${selectedAccount === '3' ? 'border-blue-600' : 'border-transparent'}`}
-                    >
-                         <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center text-gray-600">
-                                <Wallet size={24} />
-                            </div>
-                            <div>
-                                <h4 className="font-bold text-slate-900">Cuenta de Ahorros</h4>
-                                <p className="text-sm text-gray-500">Saldo: S/ 15,000.00</p>
-                            </div>
-                        </div>
-                        <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${selectedAccount === '3' ? 'border-blue-600' : 'border-gray-300'}`}>
-                            {selectedAccount === '3' && <div className="w-3 h-3 bg-blue-600 rounded-full" />}
-                        </div>
-                    </div>
+                    ))}
                 </div>
 
                 <div className="mt-8 bg-blue-50 p-4 rounded-xl flex gap-3">
@@ -221,7 +190,23 @@ export const CardPaymentSource: React.FC<FlowProps> = ({ navigate }) => {
 };
 
 // 4. Confirmation Screen
-export const CardPaymentConfirm: React.FC<FlowProps> = ({ navigate }) => {
+export const CardPaymentConfirm: React.FC<FlowProps> = ({ navigate, sourceAccount, selectedCard, addTransaction }) => {
+    const handleConfirm = () => {
+        if (addTransaction) {
+            addTransaction({
+                id: Math.random().toString(),
+                accountId: selectedCard?.id,
+                title: 'Pago de Tarjeta',
+                subtitle: selectedCard?.name || 'Visa Signature',
+                amount: 450.00,
+                currency: 'PEN',
+                date: 'Hoy',
+                type: 'income'
+            });
+        }
+        navigate(Screen.CARD_PAYMENT_SUCCESS);
+    };
+
     return (
         <div className="bg-white min-h-screen flex flex-col">
             <Header title="Confirma tu pago" onBack={() => navigate(Screen.CARD_PAYMENT_SOURCE)} />
@@ -245,8 +230,8 @@ export const CardPaymentConfirm: React.FC<FlowProps> = ({ navigate }) => {
                         </div>
                         <div>
                             <p className="text-xs text-gray-500 uppercase font-bold tracking-wider mb-1">DESDE</p>
-                            <h4 className="font-bold text-slate-900">Cuenta Simple Soles</h4>
-                            <p className="text-sm text-gray-500">S/ 12,450.00 disponible</p>
+                            <h4 className="font-bold text-slate-900">{sourceAccount?.name || 'Cuenta Simple Soles'}</h4>
+                            <p className="text-sm text-gray-500">S/ {sourceAccount?.balance.toLocaleString()} disponible</p>
                         </div>
                     </div>
 
@@ -262,7 +247,7 @@ export const CardPaymentConfirm: React.FC<FlowProps> = ({ navigate }) => {
                         </div>
                         <div>
                             <p className="text-xs text-gray-500 uppercase font-bold tracking-wider mb-1">PARA</p>
-                            <h4 className="font-bold text-slate-900">Visa Signature ...4582</h4>
+                            <h4 className="font-bold text-slate-900">{selectedCard?.name || 'Visa Signature'} {selectedCard?.number.slice(-4)}</h4>
                             <p className="text-sm text-gray-500">Pago de tarjeta</p>
                         </div>
                     </div>
@@ -299,8 +284,7 @@ export const CardPaymentConfirm: React.FC<FlowProps> = ({ navigate }) => {
                 <div className="flex-1"></div>
                 
                 <div className="space-y-4 text-center">
-                    <Button onClick={() => navigate(Screen.CARD_PAYMENT_SUCCESS)}>Confirmar pago</Button>
-                    <button onClick={() => navigate(Screen.HOME)} className="text-gray-400 text-sm font-medium">Cancelar operación</button>
+                    <Button onClick={handleConfirm}>Confirmar pago</Button>
                 </div>
             </div>
         </div>
@@ -308,7 +292,7 @@ export const CardPaymentConfirm: React.FC<FlowProps> = ({ navigate }) => {
 };
 
 // 5. Success Screen
-export const CardPaymentSuccess: React.FC<FlowProps> = ({ navigate }) => {
+export const CardPaymentSuccess: React.FC<FlowProps> = ({ navigate, selectedCard, sourceAccount }) => {
     return (
         <div className="bg-white min-h-screen flex flex-col p-6 pt-12 items-center relative">
             <button onClick={() => navigate(Screen.HOME)} className="absolute top-6 right-6 p-2 bg-gray-50 rounded-full hover:bg-gray-100">
@@ -344,12 +328,12 @@ export const CardPaymentSuccess: React.FC<FlowProps> = ({ navigate }) => {
                         <span className="text-gray-500">Tarjeta pagada</span>
                         <div className="flex items-center gap-2">
                              <div className="w-6 h-4 bg-slate-800 rounded-sm"></div>
-                             <span className="font-semibold text-slate-900">Visa Signature • 4582</span>
+                             <span className="font-semibold text-slate-900">{selectedCard?.name || 'Visa Signature'} • {selectedCard?.number.slice(-4)}</span>
                         </div>
                     </div>
                     <div className="flex justify-between text-sm">
                         <span className="text-gray-500">Método de pago</span>
-                        <span className="font-semibold text-slate-900">Cuenta Corriente • 9231</span>
+                        <span className="font-semibold text-slate-900">{sourceAccount?.name || 'Cuenta Corriente'} • {sourceAccount?.number.slice(-4)}</span>
                     </div>
                 </div>
             </div>
@@ -361,7 +345,7 @@ export const CardPaymentSuccess: React.FC<FlowProps> = ({ navigate }) => {
 
             <div className="w-full space-y-4 mt-auto">
                 <Button icon={<Share size={20} />} className="flex items-center justify-center gap-2">Compartir constancia</Button>
-                <Button variant="secondary" onClick={() => navigate(Screen.HOME)}>Volver al inicio</Button>
+                <Button variant="outline" onClick={() => navigate(Screen.HOME)}>Volver al inicio</Button>
             </div>
         </div>
     );

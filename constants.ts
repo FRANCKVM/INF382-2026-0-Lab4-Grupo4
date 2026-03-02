@@ -4,14 +4,16 @@ import { CreditCard, ShoppingBag, Utensils, Zap, Monitor } from 'lucide-react';
 export const CURRENT_USER: User = {
   name: 'Alejandro',
   email: 'alejandro@bancopremium.pe',
-  avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026704d',
+  avatar: 'https://randomuser.me/api/portraits/men/32.jpg',
 };
 
 export const ACCOUNTS: Account[] = [
   {
     id: '1',
     name: 'Cuenta Sueldo',
-    number: '**** 4521',
+    number: '191-98439201-0-51',
+    cci: '002-191-004521000-51',
+    cardNumber: '4557-1234-5678-9012',
     balance: 12450.80,
     currency: 'PEN',
     type: 'DEBIT'
@@ -19,9 +21,11 @@ export const ACCOUNTS: Account[] = [
   {
     id: '2',
     name: 'Visa Signature',
-    number: '**** 8890',
+    number: '4557-8890-1234-5678',
+    cci: '002-191-008890000-12',
+    cardNumber: '4557-8890-1234-5678',
     balance: 35000.00, // Linea disponible
-    currency: 'USD',
+    currency: 'PEN',
     type: 'CREDIT',
     network: 'VISA'
   }
@@ -30,6 +34,7 @@ export const ACCOUNTS: Account[] = [
 export const RECENT_TRANSACTIONS: Transaction[] = [
   {
     id: 't1',
+    accountId: '2',
     title: 'Netflix',
     subtitle: 'Suscripción',
     amount: -45.90,
@@ -40,6 +45,7 @@ export const RECENT_TRANSACTIONS: Transaction[] = [
   },
   {
     id: 't2',
+    accountId: '1',
     title: 'Juan Pérez',
     subtitle: 'Transferencia recibida',
     amount: 200.00,
@@ -50,6 +56,7 @@ export const RECENT_TRANSACTIONS: Transaction[] = [
   },
   {
     id: 't3',
+    accountId: '2',
     title: 'Starbucks',
     subtitle: 'Consumo',
     amount: -18.50,
@@ -60,6 +67,7 @@ export const RECENT_TRANSACTIONS: Transaction[] = [
   },
   {
     id: 't4',
+    accountId: '1',
     title: 'Supermercados Wong',
     subtitle: 'Compras',
     amount: -340.20,

@@ -324,7 +324,7 @@ export const LoanSuccess: React.FC<FlowProps> = ({ navigate }) => {
 
             <div className="w-full space-y-4 mt-auto">
                 <Button variant="outline" onClick={() => navigate(Screen.HOME)}>Ver cronograma de pagos</Button>
-                <Button onClick={() => navigate(Screen.HOME)}>Ir al inicio</Button>
+                <Button variant="outline" onClick={() => navigate(Screen.HOME)}>Ir al inicio</Button>
             </div>
         </div>
     );

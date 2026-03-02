@@ -88,7 +88,7 @@ export const NotificationsScreen: React.FC<Props> = ({ navigate }) => {
     );
 };
 
-const NotificationItem = ({ notif }: { notif: any }) => (
+const NotificationItem: React.FC<{ notif: any }> = ({ notif }) => (
     <div 
         className={`p-4 rounded-2xl border transition-all flex gap-4 ${notif.read ? 'bg-white border-transparent shadow-sm' : 'bg-white border-blue-200 shadow-md shadow-blue-100'}`}
     >

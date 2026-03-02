@@ -24,7 +24,7 @@ export const HomeScreen: React.FC<HomeProps> = ({ navigate, onSelectAccount, acc
     e.stopPropagation();
     setHiddenBalances(prev => ({
         ...prev,
-        [accountId]: !prev[accountId]
+        [accountId]: prev[accountId] === false ? true : false
     }));
   };
 
@@ -92,16 +92,16 @@ export const HomeScreen: React.FC<HomeProps> = ({ navigate, onSelectAccount, acc
                         </p>
                         <div className="flex items-center gap-3">
                             <h1 className="text-3xl font-bold">
-                                {hiddenBalances[account.id] 
-                                    ? (account.currency === 'PEN' ? 'S/ ••••••' : '$ ••••••')
-                                    : `${account.currency === 'PEN' ? 'S/' : '$'} ${account.balance.toLocaleString('es-PE', { minimumFractionDigits: 2 })}`
+                                {hiddenBalances[account.id] === false 
+                                    ? `${account.currency === 'PEN' ? 'S/' : '$'} ${account.balance.toLocaleString('es-PE', { minimumFractionDigits: 2 })}`
+                                    : (account.currency === 'PEN' ? 'S/ ••••••' : '$ ••••••')
                                 }
                             </h1>
                             <button 
                                 onClick={(e) => toggleBalance(e, account.id)}
                                 className="p-1.5 rounded-full hover:bg-white/10 transition-colors z-20"
                             >
-                                {hiddenBalances[account.id] ? <EyeOff size={22} className="text-white/70" /> : <Eye size={22} className="text-white/70" />}
+                                {hiddenBalances[account.id] === false ? <Eye size={22} className="text-white/70" /> : <EyeOff size={22} className="text-white/70" />}
                             </button>
                         </div>
                         {account.type === 'DEBIT' && (
@@ -112,7 +112,7 @@ export const HomeScreen: React.FC<HomeProps> = ({ navigate, onSelectAccount, acc
                         )}
                          {account.type === 'CREDIT' && (
                              <div className="flex items-center gap-2 mt-2 text-gray-400 text-sm">
-                                <span>Deuda total: $ 450.00</span>
+                                <span>Deuda total: {account.currency === 'PEN' ? 'S/' : '$'} 450.00</span>
                             </div>
                         )}
                     </div>
@@ -139,8 +139,8 @@ export const HomeScreen: React.FC<HomeProps> = ({ navigate, onSelectAccount, acc
         <div className="grid grid-cols-4 gap-4">
              {[
                  { icon: <ArrowRightLeft size={24} />, label: 'Transferir', action: () => navigate(Screen.TRANSFER_SELECT) },
-                 { icon: <CreditCard size={24} />, label: 'Pagar', action: () => navigate(Screen.SERVICES_SELECT) },
-                 { icon: <ScanLine size={24} />, label: 'QR', action: () => navigate(Screen.QR_SCAN) },
+                 { icon: <CreditCard size={24} />, label: 'Pagar servicio', action: () => navigate(Screen.SERVICES_SELECT) },
+                 { icon: <ScanLine size={24} />, label: 'Pagar con QR', action: () => navigate(Screen.QR_SCAN) },
                  { icon: <RefreshCw size={24} />, label: 'Cambiar $', action: () => navigate(Screen.EXCHANGE) },
              ].map((item, idx) => (
                  <button key={idx} onClick={item.action} className="flex flex-col items-center gap-2 group">
@@ -174,7 +174,7 @@ export const HomeScreen: React.FC<HomeProps> = ({ navigate, onSelectAccount, acc
                          </div>
                      </div>
                      <div className="text-right">
-                         <span className={`font-bold block ${tx.type === 'income' ? 'text-green-600' : 'text-slate-900'}`}>
+                         <span className={`font-bold block ${tx.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
                             {tx.type === 'income' ? '+' : '-'} {tx.currency === 'PEN' ? 'S/' : '$'} {Math.abs(tx.amount).toFixed(2)}
                          </span>
                          <span className="text-xs text-gray-400">{tx.date}</span>

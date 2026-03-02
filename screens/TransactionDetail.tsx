@@ -1,15 +1,16 @@
 import React from 'react';
-import { Screen, Transaction } from '../types';
+import { Screen, Transaction, Account } from '../types';
 import { Header, Button } from '../components/UI';
-import { Check, Share, ArrowDownCircle, ArrowUpCircle, Calendar, Hash, Landmark, FileText, X } from 'lucide-react';
+import { Check, Share, Calendar, Hash, Landmark, FileText, X } from 'lucide-react';
 
 interface Props {
   navigate: (screen: Screen) => void;
   transaction: Transaction | null;
+  accounts: Account[];
   onBack?: () => void;
 }
 
-export const TransactionDetailScreen: React.FC<Props> = ({ navigate, transaction, onBack }) => {
+export const TransactionDetailScreen: React.FC<Props> = ({ navigate, transaction, accounts, onBack }) => {
   const [showShareSheet, setShowShareSheet] = React.useState(false);
 
   if (!transaction) {
@@ -22,6 +23,7 @@ export const TransactionDetailScreen: React.FC<Props> = ({ navigate, transaction
   }
 
   const isIncome = transaction.type === 'income';
+  const account = accounts.find(acc => acc.id === transaction.accountId);
 
   return (
     <div className="bg-gray-50 min-h-screen flex flex-col relative">
@@ -33,13 +35,13 @@ export const TransactionDetailScreen: React.FC<Props> = ({ navigate, transaction
       <div className="flex-1 px-6 pt-8 pb-10 overflow-y-auto">
         <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100 flex flex-col items-center text-center mb-6">
             <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-4 ${isIncome ? 'bg-green-100 text-green-600' : 'bg-red-50 text-red-500'}`}>
-                {isIncome ? <ArrowDownCircle size={32} /> : <ArrowUpCircle size={32} />}
+                <div className="font-bold text-2xl">{transaction.title[0]}</div>
             </div>
             
             <h2 className="text-xl font-bold text-slate-900 mb-1">{transaction.title}</h2>
             <p className="text-sm text-gray-500 mb-6">{transaction.subtitle}</p>
             
-            <h1 className={`text-4xl font-bold ${isIncome ? 'text-green-600' : 'text-slate-900'}`}>
+            <h1 className={`text-4xl font-bold ${isIncome ? 'text-green-600' : 'text-red-600'}`}>
                 {isIncome ? '+' : '-'} {transaction.currency === 'PEN' ? 'S/' : '$'} {Math.abs(transaction.amount).toFixed(2)}
             </h1>
         </div>
@@ -71,9 +73,34 @@ export const TransactionDetailScreen: React.FC<Props> = ({ navigate, transaction
                 </div>
                 <div>
                     <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Cuenta de Origen</p>
-                    <p className="text-sm font-semibold text-slate-900">Cuenta Sueldo **** 4521</p>
+                    <p className="text-sm font-semibold text-slate-900">
+                        {account ? `${account.name} **** ${account.number.slice(-4)}` : 'Cuenta no disponible'}
+                    </p>
                 </div>
             </div>
+
+            {transaction.commission !== undefined && (
+                <>
+                    <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 bg-gray-50 rounded-full flex items-center justify-center text-gray-400">
+                            <Landmark size={20} />
+                        </div>
+                        <div>
+                            <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Monto enviado</p>
+                            <p className="text-sm font-semibold text-slate-900">S/ {(Math.abs(transaction.amount) - transaction.commission).toFixed(2)}</p>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 bg-gray-50 rounded-full flex items-center justify-center text-gray-400">
+                            <FileText size={20} />
+                        </div>
+                        <div>
+                            <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Comisión (0.5%)</p>
+                            <p className="text-sm font-semibold text-slate-900">S/ {transaction.commission.toFixed(2)}</p>
+                        </div>
+                    </div>
+                </>
+            )}
 
             <div className="flex items-center gap-4">
                 <div className="w-10 h-10 bg-gray-50 rounded-full flex items-center justify-center text-gray-400">
@@ -97,7 +124,7 @@ export const TransactionDetailScreen: React.FC<Props> = ({ navigate, transaction
             >
               Compartir Constancia
             </Button>
-            <Button variant="ghost" onClick={() => navigate(Screen.HOME)}>Volver al Inicio</Button>
+            <Button variant="outline" onClick={() => navigate(Screen.HOME)}>Volver al Inicio</Button>
         </div>
       </div>
 

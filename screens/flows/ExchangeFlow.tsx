@@ -53,7 +53,7 @@ export const ExchangeScreen: React.FC<FlowProps> = ({ navigate, amount = '0', se
         }
     };
 
-    const receivedAmount = calculateExchange(amount, currency);
+    const receivedAmount = calculateExchange(amount, currency as 'PEN' | 'USD');
     const isPen = currency === 'PEN';
 
     return (
@@ -130,7 +130,7 @@ export const ExchangeScreen: React.FC<FlowProps> = ({ navigate, amount = '0', se
 
 // 2. Confirmation Screen
 export const ExchangeConfirm: React.FC<FlowProps> = ({ navigate, amount = '0', currency = 'PEN' }) => {
-    const receivedAmount = calculateExchange(amount, currency);
+    const receivedAmount = calculateExchange(amount, currency as 'PEN' | 'USD');
     const isPen = currency === 'PEN';
     const sourceSymbol = isPen ? 'S/' : '$';
     const targetSymbol = isPen ? '$' : 'S/';
@@ -209,7 +209,7 @@ export const ExchangeConfirm: React.FC<FlowProps> = ({ navigate, amount = '0', c
 
 // 3. Success Screen
 export const ExchangeSuccess: React.FC<FlowProps> = ({ navigate, amount = '0', currency = 'PEN' }) => {
-    const receivedAmount = calculateExchange(amount, currency);
+    const receivedAmount = calculateExchange(amount, currency as 'PEN' | 'USD');
     const isPen = currency === 'PEN';
     const sourceSymbol = isPen ? 'S/' : '$';
     const targetSymbol = isPen ? '$' : 'S/';
@@ -265,7 +265,7 @@ export const ExchangeSuccess: React.FC<FlowProps> = ({ navigate, amount = '0', c
 
             <div className="w-full space-y-4 mt-auto">
                 <Button icon={<Share size={20} />} className="flex items-center justify-center gap-2">Compartir constancia</Button>
-                <button onClick={() => navigate(Screen.HOME)} className="w-full py-4 text-blue-600 font-semibold text-sm">Volver al inicio</button>
+                <Button variant="outline" onClick={() => navigate(Screen.HOME)}>Volver al inicio</Button>
             </div>
             
             {/* iOS Home Indicator Area */}
